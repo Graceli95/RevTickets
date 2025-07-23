@@ -1,7 +1,7 @@
 'use client';
 
-import { MainLayout } from '../src/components/layout/MainLayout';
-import { StatsCard } from '../src/components/dashboard/StatsCard';
+import { MainLayout } from '../src/app/shared/components';
+import { StatsCard } from '../src/app/features/dashboard';
 import { Ticket, Users, Clock, CheckCircle } from 'lucide-react';
 
 export default function Home() {

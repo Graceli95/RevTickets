@@ -1,6 +1,6 @@
 'use client';
 
-import { Sidebar as FlowbiteSidebar } from 'flowbite-react';
+import { Sidebar as FlowbiteSidebar, SidebarItem, SidebarItems, SidebarItemGroup } from 'flowbite-react';
 import { 
   LayoutDashboard, 
   Ticket, 
@@ -56,14 +56,14 @@ export function Sidebar() {
 
   return (
     <FlowbiteSidebar className="fixed top-0 left-0 z-20 flex h-full w-64 flex-shrink-0 flex-col pt-16 duration-75 lg:flex">
-      <FlowbiteSidebar.Items>
-        <FlowbiteSidebar.ItemGroup>
+      <SidebarItems>
+        <SidebarItemGroup>
           {sidebarItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
             
             return (
-              <FlowbiteSidebar.Item
+              <SidebarItem
                 key={item.href}
                 href={item.href}
                 icon={() => <Icon className="h-5 w-5" />}
@@ -71,11 +71,11 @@ export function Sidebar() {
                 as={Link}
               >
                 {item.label}
-              </FlowbiteSidebar.Item>
+              </SidebarItem>
             );
           })}
-        </FlowbiteSidebar.ItemGroup>
-      </FlowbiteSidebar.Items>
+        </SidebarItemGroup>
+      </SidebarItems>
     </FlowbiteSidebar>
   );
 }

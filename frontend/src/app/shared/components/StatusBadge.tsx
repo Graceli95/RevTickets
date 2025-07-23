@@ -1,7 +1,7 @@
 'use client';
 
 import { Badge } from 'flowbite-react';
-import type { TicketStatus, TicketPriority, TicketSeverity } from '../../types';
+import type { TicketStatus, TicketPriority, TicketSeverity } from '../../../types';
 import { 
   getStatusColor, 
   getPriorityColor, 
@@ -9,7 +9,7 @@ import {
   formatStatusDisplay,
   formatPriorityDisplay,
   formatSeverityDisplay
-} from '../../utils';
+} from '../../../lib/utils';
 
 interface StatusBadgeProps {
   status: TicketStatus;
