@@ -4,3 +4,4 @@ export * from './StatusBadge';
 export * from './Header';
 export * from './MainLayout';
 export * from './Sidebar';
+export * from './RichTextEditor';

@@ -1,10 +1,57 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { MainLayout } from '../src/app/shared/components';
 import { StatsCard } from '../src/app/features/dashboard';
+import { Badge } from '../src/app/shared/components/ui';
 import { Ticket, Users, Clock, CheckCircle } from 'lucide-react';
+import { ticketsApi } from '../src/lib/api';
+import { formatTimeAgo } from '../src/lib/utils';
+import type { Ticket as TicketType, TicketStats } from '../src/app/shared/types';
 
 export default function Home() {
+  const [stats, setStats] = useState<TicketStats | null>(null);
+  const [recentTickets, setRecentTickets] = useState<TicketType[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [statsData, ticketsData] = await Promise.all([
+          ticketsApi.getStats(),
+          ticketsApi.getAll({ status: 'open' })
+        ]);
+        
+        setStats(statsData);
+        setRecentTickets(ticketsData.slice(0, 5));
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="space-y-6">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>
+            ))}
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -18,25 +65,25 @@ export default function Home() {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Total Tickets"
-            value="1,234"
+            value={stats?.total || 0}
             icon={Ticket}
             change={{ value: "+12%", trend: "up" }}
           />
           <StatsCard
             title="Open Tickets"
-            value="89"
+            value={stats?.open || 0}
             icon={Clock}
             change={{ value: "-5%", trend: "down" }}
           />
           <StatsCard
-            title="Resolved Today"
-            value="23"
+            title="In Progress"
+            value={stats?.in_progress || 0}
             icon={CheckCircle}
             change={{ value: "+18%", trend: "up" }}
           />
           <StatsCard
-            title="Active Users"
-            value="156"
+            title="Resolved"
+            value={stats?.closed || 0}
             icon={Users}
             change={{ value: "+3%", trend: "up" }}
           />
@@ -50,57 +97,28 @@ export default function Home() {
               </h3>
               <div className="mt-6 flow-root">
                 <ul className="-my-5 divide-y divide-gray-200 dark:divide-gray-700">
-                  <li className="py-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          Login issues with mobile app
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                          #1234 • High Priority • 2 hours ago
-                        </p>
+                  {recentTickets.map((ticket) => (
+                    <li key={ticket.id} className="py-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {ticket.title}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                            #{ticket.id} • {ticket.priority} Priority • {formatTimeAgo(ticket.createdAt)}
+                          </p>
+                        </div>
+                        <div className="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
+                          <Badge variant="status" value={ticket.status} />
+                        </div>
                       </div>
-                      <div className="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          Open
-                        </span>
-                      </div>
-                    </div>
-                  </li>
-                  <li className="py-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          Feature request: Dark mode
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                          #1233 • Medium Priority • 5 hours ago
-                        </p>
-                      </div>
-                      <div className="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          In Progress
-                        </span>
-                      </div>
-                    </div>
-                  </li>
-                  <li className="py-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          Payment processing error
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                          #1232 • Critical Priority • 1 day ago
-                        </p>
-                      </div>
-                      <div className="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Resolved
-                        </span>
-                      </div>
-                    </div>
-                  </li>
+                    </li>
+                  ))}
+                  {recentTickets.length === 0 && (
+                    <li className="py-4 text-center text-gray-500 dark:text-gray-400">
+                      No recent tickets found
+                    </li>
+                  )}
                 </ul>
               </div>
             </div>

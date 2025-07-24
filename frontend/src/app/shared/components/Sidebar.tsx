@@ -18,7 +18,7 @@ export function Sidebar() {
 
   const sidebarItems = [
     {
-      href: '/dashboard',
+      href: '/',
       icon: LayoutDashboard,
       label: 'Dashboard',
     },
@@ -60,7 +60,7 @@ export function Sidebar() {
         <SidebarItemGroup>
           {sidebarItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || (pathname === '/' && item.href === '/');
             
             return (
               <SidebarItem
