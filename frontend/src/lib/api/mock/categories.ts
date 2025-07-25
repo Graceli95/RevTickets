@@ -1,9 +1,9 @@
 import type { Category, SubCategory, Tag } from '../../../app/shared/types';
 import { mockCategories, mockSubCategories, mockTags, simulateDelay } from '../../mock-data';
 
-let categories = [...mockCategories];
-let subCategories = [...mockSubCategories];
-let tags = [...mockTags];
+const categories = [...mockCategories];
+const subCategories = [...mockSubCategories];
+const tags = [...mockTags];
 
 export const mockCategoriesApi = {
   async getAll(): Promise<Category[]> {

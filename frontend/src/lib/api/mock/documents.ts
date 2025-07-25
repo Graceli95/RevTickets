@@ -1,8 +1,8 @@
 import type { Document, CreateDocument, SuggestedResponse, CreateSuggestedResponse } from '../../../app/shared/types';
 import { mockDocuments, mockSuggestedResponses, simulateDelay } from '../../mock-data';
 
-let documents = [...mockDocuments];
-let suggestedResponses = [...mockSuggestedResponses];
+const documents = [...mockDocuments];
+const suggestedResponses = [...mockSuggestedResponses];
 
 export const mockDocumentsApi = {
   async getAll(params?: {

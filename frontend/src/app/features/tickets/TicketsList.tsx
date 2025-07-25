@@ -1,17 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button, Card, Table, TableHead, TableHeadCell, TableRow, TableCell, TableBody} from 'flowbite-react';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Button, Card, Table, TableHead, TableHeadCell, TableRow, TableCell, TableBody, Pagination } from 'flowbite-react';
+import { Plus, Search, Filter, ChevronUp, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { ticketsApi } from '../../../lib/api';
-import { formatTimeAgo } from '../../../lib/utils';
+import { formatFullDateTime } from '../../../lib/utils';
 import { Badge } from '../../shared/components/ui';
 import { LoadingSpinner } from '../../shared/components';
 import { TicketViewModal } from './TicketViewModal';
 import type { Ticket } from '../../shared/types';
 
+type SortField = 'title' | 'status' | 'priority' | 'createdAt' | 'updatedAt';
+type SortDirection = 'asc' | 'desc';
+
 export function TicketsList() {
+  const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,10 +23,22 @@ export function TicketsList() {
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  
+  // Sorting state
+  const [sortField, setSortField] = useState<SortField>('updatedAt');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   useEffect(() => {
     fetchTickets();
   }, [statusFilter, priorityFilter]);
+
+  useEffect(() => {
+    applyFiltersAndSorting();
+  }, [allTickets, searchQuery, sortField, sortDirection, currentPage]);
 
   const fetchTickets = async () => {
     try {
@@ -37,7 +53,8 @@ export function TicketsList() {
       }
       
       const data = await ticketsApi.getAll(params);
-      setTickets(data);
+      setAllTickets(data);
+      setCurrentPage(1); // Reset to first page when filters change
     } catch (error) {
       console.error('Failed to fetch tickets:', error);
     } finally {
@@ -45,30 +62,95 @@ export function TicketsList() {
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      fetchTickets();
-      return;
+  const applyFiltersAndSorting = () => {
+    let filtered = [...allTickets];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(ticket => 
+        ticket.title.toLowerCase().includes(query) ||
+        ticket.description.toLowerCase().includes(query) ||
+        ticket.content.toLowerCase().includes(query)
+      );
     }
 
-    try {
-      setLoading(true);
-      const params: any = { q: searchQuery };
-      
-      if (statusFilter !== 'all') {
-        params.status = statusFilter;
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue: any = a[sortField];
+      let bValue: any = b[sortField];
+
+      // Handle date fields
+      if (sortField === 'createdAt' || sortField === 'updatedAt') {
+        aValue = new Date(aValue).getTime();
+        bValue = new Date(bValue).getTime();
       }
-      if (priorityFilter !== 'all') {
-        params.priority = priorityFilter;
+      // Handle priority with importance order
+      else if (sortField === 'priority') {
+        const priorityOrder = { 'critical': 4, 'high': 3, 'medium': 2, 'low': 1 };
+        aValue = priorityOrder[aValue as keyof typeof priorityOrder] || 0;
+        bValue = priorityOrder[bValue as keyof typeof priorityOrder] || 0;
       }
-      
-      const data = await ticketsApi.search(params);
-      setTickets(data);
-    } catch (error) {
-      console.error('Failed to search tickets:', error);
-    } finally {
-      setLoading(false);
+      // Handle status with workflow order
+      else if (sortField === 'status') {
+        const statusOrder = { 
+          'new': 1, 
+          'open': 2, 
+          'assigned': 3, 
+          'in_progress': 4, 
+          'waiting_for_customer': 5, 
+          'waiting_for_agent': 6, 
+          'resolved': 7, 
+          'closed': 8 
+        };
+        aValue = statusOrder[aValue as keyof typeof statusOrder] || 0;
+        bValue = statusOrder[bValue as keyof typeof statusOrder] || 0;
+      }
+      // Handle string fields
+      else if (typeof aValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+
+      if (sortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    // Apply pagination
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedTickets = filtered.slice(startIndex, endIndex);
+
+    setTickets(paginatedTickets);
+  };
+
+  const handleSearch = () => {
+    setCurrentPage(1); // Reset to first page when searching
+    applyFiltersAndSorting();
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new field with default desc direction
+      setSortField(field);
+      setSortDirection('desc');
     }
+    setCurrentPage(1); // Reset to first page when sorting
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ChevronUp className="h-4 w-4 opacity-30" />;
+    }
+    return sortDirection === 'asc' ? 
+      <ChevronUp className="h-4 w-4" /> : 
+      <ChevronDown className="h-4 w-4" />;
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -112,9 +194,8 @@ export function TicketsList() {
           </div>
           
           <Button
-            color="gray"
             onClick={handleSearch}
-            className="px-4"
+            className="bg-orange-600 px-4 hover:bg-orange-700 focus:ring-orange-500 text-white"
           >
             <Search className="h-4 w-4" />
           </Button>
@@ -150,7 +231,7 @@ export function TicketsList() {
           </select>
 
           <Link href="/tickets/create">
-            <Button color="blue">
+            <Button className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500">
               <Plus className="h-4 w-4 mr-2" />
               New Ticket
             </Button>
@@ -171,7 +252,7 @@ export function TicketsList() {
             </div>
             {!searchQuery && (
               <Link href="/tickets/create">
-                <Button color="blue" className="mt-4">
+                <Button className="mt-4 bg-orange-600 hover:bg-orange-700 focus:ring-orange-500">
                   <Plus className="h-4 w-4 mr-2" />
                   Create New Ticket
                 </Button>
@@ -183,11 +264,51 @@ export function TicketsList() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableHeadCell>Ticket</TableHeadCell>
-                  <TableHeadCell>Status</TableHeadCell>
-                  <TableHeadCell>Priority</TableHeadCell>
-                  <TableHeadCell>Created</TableHeadCell>
-                  <TableHeadCell>Updated</TableHeadCell>
+                  <TableHeadCell>
+                    <button
+                      onClick={() => handleSort('title')}
+                      className="flex items-center space-x-1 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                    >
+                      <span>Ticket</span>
+                      {getSortIcon('title')}
+                    </button>
+                  </TableHeadCell>
+                  <TableHeadCell>
+                    <button
+                      onClick={() => handleSort('status')}
+                      className="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400"
+                    >
+                      <span>Status</span>
+                      {getSortIcon('status')}
+                    </button>
+                  </TableHeadCell>
+                  <TableHeadCell>
+                    <button
+                      onClick={() => handleSort('priority')}
+                      className="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400"
+                    >
+                      <span>Priority</span>
+                      {getSortIcon('priority')}
+                    </button>
+                  </TableHeadCell>
+                  <TableHeadCell>
+                    <button
+                      onClick={() => handleSort('createdAt')}
+                      className="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400"
+                    >
+                      <span>Created</span>
+                      {getSortIcon('createdAt')}
+                    </button>
+                  </TableHeadCell>
+                  <TableHeadCell>
+                    <button
+                      onClick={() => handleSort('updatedAt')}
+                      className="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400"
+                    >
+                      <span>Updated</span>
+                      {getSortIcon('updatedAt')}
+                    </button>
+                  </TableHeadCell>
                   <TableHeadCell>
                     <span className="sr-only">Actions</span>
                   </TableHeadCell>
@@ -219,18 +340,23 @@ export function TicketsList() {
                       <Badge variant="priority" value={ticket.priority} />
                     </TableCell>
                     <TableCell className="text-sm text-gray-500 dark:text-gray-400">
-                      {formatTimeAgo(ticket.createdAt)}
+                      <div className="whitespace-nowrap">
+                        {formatFullDateTime(ticket.createdAt)}
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm text-gray-500 dark:text-gray-400">
-                      {formatTimeAgo(ticket.updatedAt)}
+                      <div className="whitespace-nowrap">
+                        {formatFullDateTime(ticket.updatedAt)}
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <button
+                      <Button
+                        size="xs"
+                        className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500 text-white"
                         onClick={() => handleTicketClick(ticket.id)}
-                        className="font-medium text-blue-600 hover:underline dark:text-blue-500"
                       >
                         View
-                      </button>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -240,12 +366,65 @@ export function TicketsList() {
         )}
       </Card>
 
-      {/* Results Summary */}
-      {tickets.length > 0 && (
-        <div className="text-sm text-gray-500 dark:text-gray-400">
-          Showing {tickets.length} ticket{tickets.length !== 1 ? 's' : ''}
-          {searchQuery && ` matching "${searchQuery}"`}
-          {(statusFilter !== 'all' || priorityFilter !== 'all') && ' with applied filters'}
+      {/* Pagination and Results Summary */}
+      {allTickets.length > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {(() => {
+              let filtered = [...allTickets];
+              
+              // Apply search filter for count
+              if (searchQuery.trim()) {
+                const query = searchQuery.toLowerCase();
+                filtered = filtered.filter(ticket => 
+                  ticket.title.toLowerCase().includes(query) ||
+                  ticket.description.toLowerCase().includes(query) ||
+                  ticket.content.toLowerCase().includes(query)
+                );
+              }
+              
+              const totalFiltered = filtered.length;
+              const startIndex = (currentPage - 1) * itemsPerPage + 1;
+              const endIndex = Math.min(currentPage * itemsPerPage, totalFiltered);
+              
+              if (totalFiltered === 0) {
+                return 'No tickets found';
+              }
+              
+              return (
+                <>
+                  Showing {startIndex}-{endIndex} of {totalFiltered} ticket{totalFiltered !== 1 ? 's' : ''}
+                  {searchQuery && ` matching "${searchQuery}"`}
+                  {(statusFilter !== 'all' || priorityFilter !== 'all') && ' with applied filters'}
+                </>
+              );
+            })()}
+          </div>
+          
+          {(() => {
+            let filtered = [...allTickets];
+            
+            // Apply search filter for pagination
+            if (searchQuery.trim()) {
+              const query = searchQuery.toLowerCase();
+              filtered = filtered.filter(ticket => 
+                ticket.title.toLowerCase().includes(query) ||
+                ticket.description.toLowerCase().includes(query) ||
+                ticket.content.toLowerCase().includes(query)
+              );
+            }
+            
+            const totalPages = Math.ceil(filtered.length / itemsPerPage);
+            
+            return totalPages > 1 ? (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                showIcons
+              />
+            ) : null;
+          })()}
         </div>
       )}
 

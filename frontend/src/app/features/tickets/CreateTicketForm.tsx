@@ -293,7 +293,7 @@ export function CreateTicketForm() {
           </Button>
           <Button
             type="submit"
-            color="blue"
+            className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500"
             disabled={submitting}
           >
             <Save className="h-4 w-4 mr-2" />

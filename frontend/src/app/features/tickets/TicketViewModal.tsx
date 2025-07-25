@@ -226,7 +226,7 @@ export function TicketViewModal({ ticketId, isOpen, onClose }: TicketViewModalPr
                         Cancel
                       </Button>
                       <Button
-                        color="blue"
+                        className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500"
                         onClick={handleAddComment}
                         disabled={!newComment.trim() || submittingComment}
                       >

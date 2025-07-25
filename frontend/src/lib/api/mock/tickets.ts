@@ -13,12 +13,11 @@ import {
   mockTickets, 
   mockComments, 
   generateTicketStats,
-  withRandomDelay,
   simulateDelay 
 } from '../../mock-data';
 
-let tickets = [...mockTickets];
-let comments = [...mockComments];
+const tickets = [...mockTickets];
+const comments = [...mockComments];
 
 export const mockTicketsApi = {
   async getAll(params?: {

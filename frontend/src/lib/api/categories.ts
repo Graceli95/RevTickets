@@ -1,6 +1,6 @@
 import { apiClient } from './client';
-import { API_ENDPOINTS } from '../../constants';
-import type { Category, SubCategory, Tag } from '../../types';
+import { API_ENDPOINTS } from '../../constants/api';
+import type { Category, SubCategory, Tag } from '../../app/shared/types';
 
 export const categoriesApi = {
   async getAll(): Promise<Category[]> {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { 
   Avatar, 
   Button, 
@@ -11,65 +12,82 @@ import {
   Navbar, 
   NavbarBrand 
 } from 'flowbite-react';
-import { Bell, Search } from 'lucide-react';
+import { Bell, Menu } from 'lucide-react';
 
-export function Header() {
+interface HeaderProps {
+  onToggleSidebar?: () => void;
+}
+
+export function Header({ onToggleSidebar }: HeaderProps) {
+  // Mock user data - in real app, get from auth context
+  const currentUser = {
+    name: 'John Doe',
+    email: 'john@example.com',
+    username: 'johndoe', // Used for DiceBear avatar
+  };
+
   return (
-    <Navbar fluid className="border-b border-gray-200 dark:border-gray-700">
-      <NavbarBrand href="/">
-        <span className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
-          TicketSystem
-        </span>
-      </NavbarBrand>
-      
+    <Navbar fluid className="border-b border-orange-200 dark:border-orange-800 bg-white dark:bg-gray-900 shadow-sm">
       <div className="flex items-center">
-        <div className="hidden lg:block lg:pl-2">
-          <label htmlFor="topbar-search" className="sr-only">
-            Search
-          </label>
-          <div className="relative mt-1 lg:w-96">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-            </div>
-            <input
-              type="text"
-              name="search"
-              id="topbar-search"
-              className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 pl-10 text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500 sm:text-sm"
-              placeholder="Search tickets..."
-            />
-          </div>
-        </div>
+        <Button
+          color="gray"
+          size="sm"
+          className="mr-3 lg:hidden hover:bg-orange-50 dark:hover:bg-orange-900/20 focus:ring-orange-500"
+          onClick={onToggleSidebar}
+        >
+          <Menu className="h-4 w-4" />
+        </Button>
         
-        <div className="ml-3 flex items-center">
-          <Button
-            color="gray"
-            pill
-            size="sm"
-            className="mr-1"
-          >
-            <Bell className="h-4 w-4" />
-          </Button>
-          
-          <DarkThemeToggle className="mr-2" />
-          
-          <Dropdown
-            arrowIcon={false}
-            inline
-            label={
-              <Avatar alt="User settings" img="https://flowbite.com/docs/images/people/profile-picture-5.jpg" rounded />
-            }
-          >
-            <DropdownHeader>
-              <span className="block text-sm">John Doe</span>
-              <span className="block truncate text-sm font-medium">john@example.com</span>
-            </DropdownHeader>
-            <DropdownItem>Profile</DropdownItem>
-            <DropdownItem>Settings</DropdownItem>
-            <DropdownDivider />
-            <DropdownItem>Sign out</DropdownItem>
-          </Dropdown>
-        </div>
+        <NavbarBrand href="/">
+          <div className="flex items-center space-x-2">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+              <span className="text-white font-bold text-sm">TS</span>
+            </div>
+            <span className="self-center whitespace-nowrap text-xl font-semibold text-orange-600 dark:text-orange-400">
+              TicketSystem
+            </span>
+          </div>
+        </NavbarBrand>
+      </div>
+      
+      <div className="flex items-center space-x-3">
+        <Button
+          pill
+          size="sm"
+          className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500 text-white"
+        >
+          <Bell className="h-4 w-4" />
+        </Button>
+        
+        <DarkThemeToggle />
+        
+        <Dropdown
+          arrowIcon={false}
+          inline
+          label={
+            <Avatar 
+              alt="User settings" 
+              img={`https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.username}&backgroundColor=fb923c,f97316,ea580c&textColor=ffffff`}
+              rounded 
+              className="ring-2 ring-orange-200 dark:ring-orange-800"
+            />
+          }
+        >
+          <DropdownHeader>
+            <span className="block text-sm font-medium text-gray-900 dark:text-white">{currentUser.name}</span>
+            <span className="block truncate text-sm text-gray-500 dark:text-gray-400">{currentUser.email}</span>
+          </DropdownHeader>
+          <DropdownItem className="hover:bg-orange-50 dark:hover:bg-orange-900/20">
+            Profile
+          </DropdownItem>
+          <DropdownItem className="hover:bg-orange-50 dark:hover:bg-orange-900/20">
+            Settings
+          </DropdownItem>
+          <DropdownDivider />
+          <DropdownItem className="hover:bg-orange-50 dark:hover:bg-orange-900/20">
+            Sign out
+          </DropdownItem>
+        </Dropdown>
       </div>
     </Navbar>
   );
