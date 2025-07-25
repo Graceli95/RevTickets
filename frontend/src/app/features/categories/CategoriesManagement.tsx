@@ -14,7 +14,7 @@ export function CategoriesManagement() {
     <div className="space-y-6">
       <Tabs
         aria-label="Categories management tabs"
-        style="underline"
+        variant="underline"
         onActiveTabChange={(tab) => setActiveTab(tab)}
       >
         <Tabs.Item

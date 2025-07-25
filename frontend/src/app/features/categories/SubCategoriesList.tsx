@@ -202,17 +202,15 @@ export function SubCategoriesList() {
                         <div className="flex items-center space-x-2">
                           <Button
                             size="xs"
-                            color="gray"
                             onClick={() => handleEdit(subCategory)}
-                            className="hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                            className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
                           >
                             <Edit className="h-3 w-3" />
                           </Button>
                           <Button
                             size="xs"
-                            color="gray"
                             onClick={() => handleDelete(subCategory)}
-                            className="hover:bg-red-50 dark:hover:bg-red-900/20"
+                            className="bg-red-600 hover:bg-red-700 focus:ring-red-500 text-white dark:bg-red-600 dark:hover:bg-red-700"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -277,9 +275,9 @@ export function SubCategoriesList() {
             <div className="flex justify-end space-x-3 pt-4">
               <Button
                 type="button"
-                color="gray"
                 onClick={() => setShowModal(false)}
                 disabled={submitting}
+                className="bg-gray-500 hover:bg-gray-600 focus:ring-gray-400 text-white dark:bg-gray-600 dark:hover:bg-gray-700"
               >
                 Cancel
               </Button>
