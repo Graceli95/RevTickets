@@ -48,7 +48,8 @@ async def get_profile(current_user: User = Depends(get_current_user)):
         last_name=current_user.last_name,
         email=current_user.email,
         role=current_user.role,
-        created_at=current_user.created_at
+        created_at=current_user.created_at,
+
     )
 
 @router.post("/logout")
