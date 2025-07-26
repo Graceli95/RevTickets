@@ -26,11 +26,11 @@ class CommentResponse(BaseModel):
     updatedAt: datetime
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 # feature comment edit
 class CommentUpdate(BaseModel):
     content: Optional[str] = None
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True

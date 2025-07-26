@@ -13,8 +13,8 @@ class User(Document):
     hashed_password: str
     role: UserRole = Field(default=UserRole.user, description="User role in the system")
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    category: Optional[Link[Category]]
-    subcategory: Optional[List[Link[SubCategory]]]
+#    category: Optional[Link[Category]]
+#    subcategory: Optional[List[Link[SubCategory]]]
 
     class Settings:
         name = "users"
