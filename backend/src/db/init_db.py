@@ -8,6 +8,7 @@ from src.models.subcategory import SubCategory
 from src.models.tag import Tag
 from src.models.comment import Comment
 from src.models.user import User
+from src.models.article import Article
 
 async def init_db():
     """
@@ -24,7 +25,8 @@ async def init_db():
             SubCategory,    
             Tag,
             Comment,
-            User
+            User,
+            Article
 
         ]
     )
