@@ -1,4 +1,4 @@
-import type { TicketStatus, TicketPriority, TicketSeverity } from '../types';
+import type { TicketStatus, TicketPriority, TicketSeverity } from '../app/shared/types';
 
 export const TICKET_STATUS: Record<string, TicketStatus> = {
   NEW: 'new',

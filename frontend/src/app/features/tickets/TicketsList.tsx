@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button, Card, Table, TableHead, TableHeadCell, TableRow, TableCell, TableBody, Pagination } from 'flowbite-react';
 import { Plus, Search, Filter, ChevronUp, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
@@ -10,8 +10,9 @@ import { Badge } from '../../shared/components/ui';
 import { LoadingSpinner } from '../../shared/components';
 import { TicketViewModal } from './TicketViewModal';
 import type { Ticket } from '../../shared/types';
+import { getRichTextDisplay } from '../../../lib/utils';
 
-type SortField = 'title' | 'status' | 'priority' | 'createdAt' | 'updatedAt';
+type SortField = 'title' | 'status' | 'priority' | 'created_at' | 'updated_at';
 type SortDirection = 'asc' | 'desc';
 
 export function TicketsList() {
@@ -29,7 +30,7 @@ export function TicketsList() {
   const [itemsPerPage] = useState(10);
   
   // Sorting state
-  const [sortField, setSortField] = useState<SortField>('updatedAt');
+  const [sortField, setSortField] = useState<SortField>('updated_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   useEffect(() => {
@@ -40,10 +41,10 @@ export function TicketsList() {
     applyFiltersAndSorting();
   }, [allTickets, searchQuery, sortField, sortDirection, currentPage]);
 
-  const fetchTickets = async () => {
+  const fetchTickets = useCallback(async () => {
     try {
       setLoading(true);
-      const params: any = {};
+      const params: Record<string, string> = {};
       
       if (statusFilter !== 'all') {
         params.status = statusFilter;
@@ -60,9 +61,9 @@ export function TicketsList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, priorityFilter]);
 
-  const applyFiltersAndSorting = () => {
+  const applyFiltersAndSorting = useCallback(() => {
     let filtered = [...allTickets];
 
     // Apply search filter
@@ -71,17 +72,17 @@ export function TicketsList() {
       filtered = filtered.filter(ticket => 
         ticket.title.toLowerCase().includes(query) ||
         ticket.description.toLowerCase().includes(query) ||
-        ticket.content.toLowerCase().includes(query)
+        getRichTextDisplay(ticket.content).toLowerCase().includes(query)
       );
     }
 
     // Apply sorting
     filtered.sort((a, b) => {
-      let aValue: any = a[sortField];
-      let bValue: any = b[sortField];
+      let aValue: string | number = a[sortField as keyof typeof a] as string | number;
+      let bValue: string | number = b[sortField as keyof typeof b] as string | number;
 
       // Handle date fields
-      if (sortField === 'createdAt' || sortField === 'updatedAt') {
+      if (sortField === 'created_at' || sortField === 'updated_at') {
         aValue = new Date(aValue).getTime();
         bValue = new Date(bValue).getTime();
       }
@@ -107,7 +108,7 @@ export function TicketsList() {
         bValue = statusOrder[bValue as keyof typeof statusOrder] || 0;
       }
       // Handle string fields
-      else if (typeof aValue === 'string') {
+      else if (typeof aValue === 'string' && typeof bValue === 'string') {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
       }
@@ -125,7 +126,7 @@ export function TicketsList() {
     const paginatedTickets = filtered.slice(startIndex, endIndex);
 
     setTickets(paginatedTickets);
-  };
+  }, [allTickets, searchQuery, sortField, sortDirection, currentPage, itemsPerPage]);
 
   const handleSearch = () => {
     setCurrentPage(1); // Reset to first page when searching
@@ -293,20 +294,20 @@ export function TicketsList() {
                   </TableHeadCell>
                   <TableHeadCell>
                     <button
-                      onClick={() => handleSort('createdAt')}
+                      onClick={() => handleSort('created_at')}
                       className="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400"
                     >
                       <span>Created</span>
-                      {getSortIcon('createdAt')}
+                      {getSortIcon('created_at')}
                     </button>
                   </TableHeadCell>
                   <TableHeadCell>
                     <button
-                      onClick={() => handleSort('updatedAt')}
+                      onClick={() => handleSort('updated_at')}
                       className="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400"
                     >
                       <span>Updated</span>
-                      {getSortIcon('updatedAt')}
+                      {getSortIcon('updated_at')}
                     </button>
                   </TableHeadCell>
                   <TableHeadCell>
@@ -341,12 +342,12 @@ export function TicketsList() {
                     </TableCell>
                     <TableCell className="text-sm text-gray-500 dark:text-gray-400">
                       <div className="whitespace-nowrap">
-                        {formatFullDateTime(ticket.createdAt)}
+                        {formatFullDateTime(ticket.created_at)}
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-gray-500 dark:text-gray-400">
                       <div className="whitespace-nowrap">
-                        {formatFullDateTime(ticket.updatedAt)}
+                        {formatFullDateTime(ticket.updated_at)}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -379,7 +380,7 @@ export function TicketsList() {
                 filtered = filtered.filter(ticket => 
                   ticket.title.toLowerCase().includes(query) ||
                   ticket.description.toLowerCase().includes(query) ||
-                  ticket.content.toLowerCase().includes(query)
+                  getRichTextDisplay(ticket.content).toLowerCase().includes(query)
                 );
               }
               
@@ -410,7 +411,7 @@ export function TicketsList() {
               filtered = filtered.filter(ticket => 
                 ticket.title.toLowerCase().includes(query) ||
                 ticket.description.toLowerCase().includes(query) ||
-                ticket.content.toLowerCase().includes(query)
+                getRichTextDisplay(ticket.content).toLowerCase().includes(query)
               );
             }
             

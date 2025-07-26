@@ -1,7 +1,7 @@
 'use client';
 
-import { Badge } from 'flowbite-react';
-import type { TicketStatus, TicketPriority, TicketSeverity } from '../../../types';
+// Note: Using custom badge styling instead of flowbite Badge component
+import type { TicketStatus, TicketPriority, TicketSeverity } from '../types';
 import { 
   getStatusColor, 
   getPriorityColor, 

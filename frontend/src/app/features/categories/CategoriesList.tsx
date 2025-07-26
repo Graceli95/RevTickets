@@ -41,7 +41,7 @@ export function CategoriesList() {
   };
 
   const getSubCategoryCount = (categoryId: string) => {
-    return subCategories.filter(sub => sub.categoryId === categoryId).length;
+    return subCategories.filter(sub => sub.category_id === categoryId).length;
   };
 
   const handleCreate = () => {
@@ -71,14 +71,12 @@ export function CategoriesList() {
         await categoriesApi.update(editingCategory.id, {
           name: formData.name.trim(),
           description: formData.description.trim(),
-          tags: editingCategory.tags, // Keep existing tags for now
         });
       } else {
         // Create new category
         await categoriesApi.create({
           name: formData.name.trim(),
           description: formData.description.trim(),
-          tags: [], // Start with no tags
         });
       }
       
@@ -188,17 +186,7 @@ export function CategoriesList() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {category.tags.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded dark:bg-gray-700 dark:text-gray-300"
-                          >
-                            {tag.key}: {tag.value}
-                          </span>
-                        ))}
-                        {category.tags.length === 0 && (
-                          <span className="text-xs text-gray-400 dark:text-gray-600">No tags</span>
-                        )}
+                        <span className="text-xs text-gray-400 dark:text-gray-600">Tags managed separately</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -235,7 +223,7 @@ export function CategoriesList() {
         <ModalBody>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="name" value="Category Name *" className="mb-2 block" />
+              <Label htmlFor="name" className="mb-2 block">Category Name *</Label>
               <TextInput
                 id="name"
                 placeholder="Enter category name"
@@ -246,7 +234,7 @@ export function CategoriesList() {
             </div>
 
             <div>
-              <Label htmlFor="description" value="Description *" className="mb-2 block" />
+              <Label htmlFor="description" className="mb-2 block">Description *</Label>
               <Textarea
                 id="description"
                 placeholder="Describe what this category is for"

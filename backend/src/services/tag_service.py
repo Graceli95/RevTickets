@@ -1,5 +1,6 @@
 from src.models.tag import Tag
 from src.schemas.tag import TagCreate, TagUpdate, TagResponse
+from typing import List
 
 class TagService:
     @staticmethod
@@ -38,3 +39,13 @@ class TagService:
         tag = await Tag.get(tag_id)
         if tag:
             await tag.delete()
+
+    @staticmethod
+    async def get_all_tags() -> List[TagResponse]:
+        tags = await Tag.find_all().to_list()
+        result = []
+        for tag in tags:
+            tag_dict = tag.model_dump()
+            tag_dict["id"] = str(tag.id)
+            result.append(TagResponse(**tag_dict))
+        return result

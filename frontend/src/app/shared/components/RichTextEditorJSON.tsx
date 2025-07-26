@@ -16,35 +16,23 @@ import {
   Redo,
 } from 'lucide-react';
 
-import type { RichTextContent } from '../types';
-
-interface RichTextEditorProps {
-  content?: RichTextContent | string; // Accept both new format and legacy HTML string
-  onChange?: (content: RichTextContent) => void;
+interface RichTextEditorJSONProps {
+  content?: string | object; // Can accept both HTML string and JSON object
+  onChange?: (content: { html: string; json: object; text: string }) => void;
   placeholder?: string;
   editable?: boolean;
   className?: string;
+  format?: 'html' | 'json'; // Output format preference
 }
 
-export function RichTextEditor({
+export function RichTextEditorJSON({
   content = '',
   onChange,
   placeholder = 'Start typing...',
   editable = true,
   className = '',
-}: RichTextEditorProps) {
-  // Convert content to proper format for editor
-  const getEditorContent = () => {
-    if (!content) return '';
-    
-    // If it's already a RichTextContent object, use the JSON
-    if (typeof content === 'object' && 'json' in content) {
-      return content.json;
-    }
-    
-    // If it's a string, treat as legacy HTML
-    return content as string;
-  };
+  format = 'json',
+}: RichTextEditorJSONProps) {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -58,7 +46,7 @@ export function RichTextEditor({
         placeholder,
       }),
     ],
-    content: getEditorContent(),
+    content: typeof content === 'string' ? content : content,
     editable,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
@@ -67,13 +55,12 @@ export function RichTextEditor({
         const json = editor.getJSON();
         const text = editor.getText();
         
-        const richTextContent: RichTextContent = {
-          html,
-          json,
-          text
-        };
-        
-        onChange(richTextContent);
+        if (format === 'json') {
+          onChange({ html, json, text });
+        } else {
+          // Backward compatibility - return just HTML
+          onChange({ html, json: {}, text });
+        }
       }
     },
   });

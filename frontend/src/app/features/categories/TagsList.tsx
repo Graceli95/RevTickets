@@ -80,7 +80,7 @@ export function TagsList() {
       
       if (editingTag) {
         // Update existing tag
-        await tagsApi.update(`${editingTag.key}:${editingTag.value}`, {
+        await tagsApi.update(editingTag.id!, {
           key: formData.key.trim(),
           value: formData.value.trim(),
         });
@@ -108,7 +108,7 @@ export function TagsList() {
     }
 
     try {
-      await tagsApi.delete(`${tag.key}:${tag.value}`);
+      await tagsApi.delete(tag.id!);
       await fetchTags();
     } catch (error) {
       console.error('Failed to delete tag:', error);
@@ -153,7 +153,7 @@ export function TagsList() {
               <div className="flex flex-wrap gap-1">
                 {keyTags.map((tag) => (
                   <span
-                    key={`${tag.key}:${tag.value}`}
+                    key={tag.id || `${tag.key}:${tag.value}`}
                     className="inline-flex items-center px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full dark:bg-orange-900/20 dark:text-orange-400"
                   >
                     {tag.value}
@@ -197,7 +197,7 @@ export function TagsList() {
               <TableBody className="divide-y">
                 {tags.map((tag) => (
                   <TableRow
-                    key={`${tag.key}:${tag.value}`}
+                    key={tag.id || `${tag.key}:${tag.value}`}
                     className="bg-white dark:border-gray-700 dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     <TableCell className="whitespace-nowrap font-medium text-gray-900 dark:text-white">
@@ -245,7 +245,7 @@ export function TagsList() {
         <ModalBody>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="key" value="Tag Key *" className="mb-2 block" />
+              <Label htmlFor="key" className="mb-2 block">Tag Key *</Label>
               <TextInput
                 id="key"
                 placeholder="e.g., department, priority, type"
@@ -259,7 +259,7 @@ export function TagsList() {
             </div>
 
             <div>
-              <Label htmlFor="value" value="Tag Value *" className="mb-2 block" />
+              <Label htmlFor="value" className="mb-2 block">Tag Value *</Label>
               <TextInput
                 id="value"
                 placeholder="e.g., IT, high, bug"

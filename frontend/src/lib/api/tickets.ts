@@ -10,7 +10,7 @@ import type {
   Comment,
   CreateComment,
   UpdateComment
-} from '../../types';
+} from '../../app/shared/types';
 
 export const ticketsApi = {
   async getAll(params?: {

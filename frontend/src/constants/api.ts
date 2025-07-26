@@ -3,57 +3,57 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://loca
 export const API_ENDPOINTS = {
   // Auth
   AUTH: {
-    LOGIN: '/auth/login',
-    LOGOUT: '/auth/logout',
-    REFRESH: '/auth/refresh',
-    PROFILE: '/auth/profile',
+    LOGIN: '/users/login',
+    LOGOUT: '/users/logout',
+    REFRESH: '/users/refresh',
+    PROFILE: '/users/profile',
   },
   
   // Tickets
   TICKETS: {
-    BASE: '/api/tickets',
-    BY_ID: (id: string) => `/api/tickets/${id}`,
-    ASSIGN: (id: string) => `/api/tickets/${id}/assign`,
-    CLOSE: (id: string) => `/api/tickets/${id}/close`,
-    STATS: '/api/tickets/stats',
-    SEARCH: '/api/tickets/search',
-    COMMENTS: (ticketId: string) => `/api/tickets/${ticketId}/comments`,
+    BASE: '/tickets',
+    BY_ID: (id: string) => `/tickets/${id}`,
+    ASSIGN: (id: string) => `/tickets/${id}/assign`,
+    CLOSE: (id: string) => `/tickets/${id}/close`,
+    STATS: '/tickets/stats',
+    SEARCH: '/tickets/search',
+    COMMENTS: (ticketId: string) => `/tickets/${ticketId}/comments`,
   },
   
   // Categories
   CATEGORIES: {
-    BASE: '/api/categories',
-    BY_ID: (id: string) => `/api/categories/${id}`,
-    SUBCATEGORIES: (categoryId: string) => `/api/categories/${categoryId}/subcategories`,
+    BASE: '/categories',
+    BY_ID: (id: string) => `/categories/${id}`,
+    SUBCATEGORIES: (categoryId: string) => `/categories/${categoryId}/subcategories`,
   },
   
   // Subcategories
   SUBCATEGORIES: {
-    BASE: '/api/subcategories',
-    BY_ID: (id: string) => `/api/subcategories/${id}`,
+    BASE: '/subcategories',
+    BY_ID: (id: string) => `/subcategories/${id}`,
   },
   
   // Tags
   TAGS: {
-    BASE: '/api/tags',
-    BY_KEY: (key: string) => `/api/tags/${key}`,
+    BASE: '/tags',
+    BY_ID: (id: string) => `/tags/${id}`,
   },
   
   // Comments
   COMMENTS: {
-    BY_ID: (id: string) => `/api/comments/${id}`,
+    BY_ID: (id: string) => `/comments/${id}`,
   },
   
   // Documents
   DOCUMENTS: {
-    BASE: '/api/documents',
-    BY_ID: (id: string) => `/api/documents/${id}`,
-    SEARCH: '/api/documents/search',
+    BASE: '/documents',
+    BY_ID: (id: string) => `/documents/${id}`,
+    SEARCH: '/documents/search',
   },
   
   // Suggested Responses
   SUGGESTED_RESPONSES: {
-    BASE: '/api/suggested-responses',
-    BY_ID: (id: string) => `/api/suggested-responses/${id}`,
+    BASE: '/suggested-responses',
+    BY_ID: (id: string) => `/suggested-responses/${id}`,
   },
 } as const;

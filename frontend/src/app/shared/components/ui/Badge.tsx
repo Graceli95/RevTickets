@@ -1,6 +1,6 @@
 'use client';
 
-import type { TicketStatus, TicketPriority, TicketSeverity } from '../../../../types';
+import type { TicketStatus, TicketPriority, TicketSeverity } from '../../types';
 import { 
   getStatusColor, 
   getPriorityColor, 

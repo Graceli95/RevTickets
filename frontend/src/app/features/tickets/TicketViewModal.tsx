@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Modal, ModalHeader, ModalBody, Button, Card, Avatar } from 'flowbite-react';
-import { X, MessageCircle, Clock, User, Tag, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Modal, ModalHeader, ModalBody, Button, Avatar } from 'flowbite-react';
+import { MessageCircle, AlertCircle } from 'lucide-react';
 import { ticketsApi } from '../../../lib/api';
 import { formatTimeAgo } from '../../../lib/utils';
 import { Badge, LoadingSpinner } from '../../shared/components';
 import { RichTextEditor } from '../../shared/components/RichTextEditor';
-import type { Ticket, Comment, CreateComment } from '../../shared/types';
+import type { Ticket, Comment, CreateComment, RichTextContent } from '../../shared/types';
+import { createEmptyRichText, convertLegacyContent } from '../../../lib/utils';
 
 interface TicketViewModalProps {
   ticketId: string | null;
@@ -19,8 +20,8 @@ export function TicketViewModal({ ticketId, isOpen, onClose }: TicketViewModalPr
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
-  const [commentsLoading, setCommentsLoading] = useState(false);
-  const [newComment, setNewComment] = useState('');
+  // const [commentsLoading, setCommentsLoading] = useState(false);
+  const [newComment, setNewComment] = useState<RichTextContent>(createEmptyRichText());
   const [submittingComment, setSubmittingComment] = useState(false);
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export function TicketViewModal({ ticketId, isOpen, onClose }: TicketViewModalPr
     }
   }, [ticketId, isOpen]);
 
-  const fetchTicketData = async () => {
+  const fetchTicketData = useCallback(async () => {
     if (!ticketId) return;
 
     try {
@@ -45,21 +46,20 @@ export function TicketViewModal({ ticketId, isOpen, onClose }: TicketViewModalPr
     } finally {
       setLoading(false);
     }
-  };
+  }, [ticketId]);
 
   const handleAddComment = async () => {
-    if (!ticketId || !newComment.trim()) return;
+    if (!ticketId || !newComment.text.trim()) return;
 
     try {
       setSubmittingComment(true);
       const commentData: CreateComment = {
-        userId: 'current-user-id', // TODO: Get from auth context
         content: newComment,
       };
       
       const newCommentData = await ticketsApi.createComment(ticketId, commentData);
       setComments([...comments, newCommentData]);
-      setNewComment('');
+      setNewComment(createEmptyRichText());
     } catch (error) {
       console.error('Failed to add comment:', error);
     } finally {
@@ -70,7 +70,7 @@ export function TicketViewModal({ ticketId, isOpen, onClose }: TicketViewModalPr
   const handleClose = () => {
     setTicket(null);
     setComments([]);
-    setNewComment('');
+    setNewComment(createEmptyRichText());
     onClose();
   };
 
@@ -112,20 +112,20 @@ export function TicketViewModal({ ticketId, isOpen, onClose }: TicketViewModalPr
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 text-sm">
                 <div>
                   <dt className="font-medium text-gray-500 dark:text-gray-400">Created</dt>
-                  <dd className="mt-1 text-gray-900 dark:text-white">{formatTimeAgo(ticket.createdAt)}</dd>
+                  <dd className="mt-1 text-gray-900 dark:text-white">{formatTimeAgo(ticket.created_at)}</dd>
                 </div>
                 <div>
                   <dt className="font-medium text-gray-500 dark:text-gray-400">Updated</dt>
-                  <dd className="mt-1 text-gray-900 dark:text-white">{formatTimeAgo(ticket.updatedAt)}</dd>
+                  <dd className="mt-1 text-gray-900 dark:text-white">{formatTimeAgo(ticket.updated_at)}</dd>
                 </div>
                 <div>
                   <dt className="font-medium text-gray-500 dark:text-gray-400">Reporter</dt>
-                  <dd className="mt-1 text-gray-900 dark:text-white">{ticket.userId}</dd>
+                  <dd className="mt-1 text-gray-900 dark:text-white">{ticket.user_id}</dd>
                 </div>
-                {ticket.agentId && (
+                {ticket.agent_id && (
                   <div>
                     <dt className="font-medium text-gray-500 dark:text-gray-400">Assigned to</dt>
-                    <dd className="mt-1 text-gray-900 dark:text-white">{ticket.agentId}</dd>
+                    <dd className="mt-1 text-gray-900 dark:text-white">{ticket.agent_id}</dd>
                   </div>
                 )}
               </div>
@@ -141,7 +141,7 @@ export function TicketViewModal({ ticketId, isOpen, onClose }: TicketViewModalPr
                 <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">DETAILED DESCRIPTION</h4>
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                   <RichTextEditor
-                    content={ticket.content}
+                    content={convertLegacyContent(ticket.content)}
                     editable={false}
                     className="border-none bg-transparent"
                   />
@@ -170,22 +170,22 @@ export function TicketViewModal({ ticketId, isOpen, onClose }: TicketViewModalPr
                     <div key={comment.id} className="flex space-x-4">
                       <Avatar
                         img=""
-                        alt={comment.userId}
+                        alt={comment.user_id}
                         size="md"
                         className="flex-shrink-0"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-2">
                           <span className="font-semibold text-gray-900 dark:text-white">
-                            {comment.userId}
+                            {comment.user_id}
                           </span>
                           <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {formatTimeAgo(comment.createdAt)}
+                            {formatTimeAgo(comment.created_at)}
                           </span>
                         </div>
                         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                           <RichTextEditor
-                            content={comment.content}
+                            content={convertLegacyContent(comment.content)}
                             editable={false}
                             className="border-none bg-transparent"
                           />
@@ -220,15 +220,15 @@ export function TicketViewModal({ ticketId, isOpen, onClose }: TicketViewModalPr
                     <div className="flex justify-end space-x-3">
                       <Button
                         color="gray"
-                        onClick={() => setNewComment('')}
-                        disabled={!newComment.trim()}
+                        onClick={() => setNewComment(createEmptyRichText())}
+                        disabled={!newComment.text.trim()}
                       >
                         Cancel
                       </Button>
                       <Button
                         className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500"
                         onClick={handleAddComment}
-                        disabled={!newComment.trim() || submittingComment}
+                        disabled={!newComment.text.trim() || submittingComment}
                       >
                         {submittingComment ? 'Adding...' : 'Add Comment'}
                       </Button>

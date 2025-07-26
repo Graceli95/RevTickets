@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from src.schemas.tag import TagCreate, TagResponse, TagUpdate
 from src.services.tag_service import TagService
 from src.utils.security import get_current_user
+from typing import List
 
 
 router = APIRouter(prefix="/tags", tags=["Tags"], dependencies=[Depends(get_current_user)])
@@ -28,3 +29,7 @@ async def update_tag(tag_id: str, tag: TagUpdate):
 async def delete_tag(tag_id: str):
     await TagService.delete_tag(tag_id)
     return {"status": "deleted"}
+
+@router.get("/", response_model=List[TagResponse])
+async def get_all_tags():
+    return await TagService.get_all_tags()

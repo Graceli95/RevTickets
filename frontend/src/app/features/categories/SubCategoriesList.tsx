@@ -57,7 +57,7 @@ export function SubCategoriesList() {
     setFormData({
       name: subCategory.name,
       description: subCategory.description,
-      categoryId: subCategory.categoryId,
+      categoryId: subCategory.category_id,
     });
     setShowModal(true);
   };
@@ -74,14 +74,14 @@ export function SubCategoriesList() {
         await subCategoriesApi.update(editingSubCategory.id, {
           name: formData.name.trim(),
           description: formData.description.trim(),
-          categoryId: formData.categoryId,
+          category_id: formData.categoryId,
         });
       } else {
         // Create new subcategory
         await subCategoriesApi.create({
           name: formData.name.trim(),
           description: formData.description.trim(),
-          categoryId: formData.categoryId,
+          category_id: formData.categoryId,
         });
       }
       
@@ -191,7 +191,7 @@ export function SubCategoriesList() {
                         <div className="flex items-center space-x-2">
                           <FolderOpen className="h-3 w-3 text-gray-500 dark:text-gray-400" />
                           <span className="text-gray-600 dark:text-gray-400">
-                            {getCategoryName(subCategory.categoryId)}
+                            {getCategoryName(subCategory.category_id)}
                           </span>
                         </div>
                       </TableCell>
@@ -233,7 +233,7 @@ export function SubCategoriesList() {
         <ModalBody>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="categoryId" value="Parent Category *" className="mb-2 block" />
+              <Label htmlFor="categoryId" className="mb-2 block">Parent Category *</Label>
               <Select
                 id="categoryId"
                 value={formData.categoryId}
@@ -250,7 +250,7 @@ export function SubCategoriesList() {
             </div>
 
             <div>
-              <Label htmlFor="name" value="Subcategory Name *" className="mb-2 block" />
+              <Label htmlFor="name" className="mb-2 block">Subcategory Name *</Label>
               <TextInput
                 id="name"
                 placeholder="Enter subcategory name"
@@ -261,7 +261,7 @@ export function SubCategoriesList() {
             </div>
 
             <div>
-              <Label htmlFor="description" value="Description *" className="mb-2 block" />
+              <Label htmlFor="description" className="mb-2 block">Description *</Label>
               <Textarea
                 id="description"
                 placeholder="Describe what this subcategory is for"

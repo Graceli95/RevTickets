@@ -10,7 +10,7 @@ export default function CreateTicketPage() {
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Create New Ticket</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Submit a new support request and we'll help you resolve it quickly
+            Submit a new support request and we&apos;ll help you resolve it quickly
           </p>
         </div>
         

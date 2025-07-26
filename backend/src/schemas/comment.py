@@ -2,13 +2,14 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 from beanie import PydanticObjectId
+from src.models.rich_text import RichTextContent
 
 class UserInfo(BaseModel):
     id: PydanticObjectId
     email: str
     name: Optional[str] = None
 class CommentBase(BaseModel):
-    content: str
+    content: RichTextContent
     userId: PydanticObjectId  # ID of the user who made the comment
     ticketId: PydanticObjectId  # ID of the ticket the comment is associated with
     createdAt: datetime
@@ -19,18 +20,18 @@ class CommentCreate(CommentBase):
 
 class CommentResponse(BaseModel):
     id: str  # ID of the comment
-    content: str
+    content: RichTextContent
     ticketId: str  # ID of the associated ticket
     user: UserInfo  # User information
     createdAt: datetime
     updatedAt: datetime
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 # feature comment edit
 class CommentUpdate(BaseModel):
-    content: Optional[str] = None
+    content: Optional[RichTextContent] = None
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True

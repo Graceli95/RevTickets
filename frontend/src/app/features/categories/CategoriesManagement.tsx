@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Tabs } from 'flowbite-react';
+import { Tabs, TabItem } from 'flowbite-react';
 import { FolderOpen, Tag, Layers } from 'lucide-react';
 import { CategoriesList } from './CategoriesList';
 import { SubCategoriesList } from './SubCategoriesList';
@@ -17,7 +17,7 @@ export function CategoriesManagement() {
         variant="underline"
         onActiveTabChange={(tab) => setActiveTab(tab)}
       >
-        <Tabs.Item
+        <TabItem
           active={activeTab === 0}
           title="Categories"
           icon={FolderOpen}
@@ -25,9 +25,9 @@ export function CategoriesManagement() {
           <div className="py-6">
             <CategoriesList />
           </div>
-        </Tabs.Item>
+        </TabItem>
         
-        <Tabs.Item
+        <TabItem
           active={activeTab === 1}
           title="Subcategories"
           icon={Layers}
@@ -35,9 +35,9 @@ export function CategoriesManagement() {
           <div className="py-6">
             <SubCategoriesList />
           </div>
-        </Tabs.Item>
+        </TabItem>
         
-        <Tabs.Item
+        <TabItem
           active={activeTab === 2}
           title="Tags"
           icon={Tag}
@@ -45,7 +45,7 @@ export function CategoriesManagement() {
           <div className="py-6">
             <TagsList />
           </div>
-        </Tabs.Item>
+        </TabItem>
       </Tabs>
     </div>
   );

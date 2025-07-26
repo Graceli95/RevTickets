@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 import { API_ENDPOINTS } from '../../constants';
-import type { Document, CreateDocument, SuggestedResponse, CreateSuggestedResponse } from '../../types';
+import type { Document, CreateDocument, SuggestedResponse, CreateSuggestedResponse } from '../../app/shared/types';
 
 export const documentsApi = {
   async getAll(params?: {

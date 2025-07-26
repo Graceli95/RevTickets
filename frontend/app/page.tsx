@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MainLayout } from '../src/app/shared/components';
+import { MainLayout, ProtectedRoute } from '../src/app/shared/components';
 import { StatsCard } from '../src/app/features/dashboard';
 import { Badge } from '../src/app/shared/components/ui';
 import { Ticket, Users, Clock, CheckCircle } from 'lucide-react';
@@ -36,24 +36,27 @@ export default function Home() {
 
   if (loading) {
     return (
-      <MainLayout>
-        <div className="space-y-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      <ProtectedRoute>
+        <MainLayout>
+          <div className="space-y-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-1/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>
-            ))}
-          </div>
-        </div>
-      </MainLayout>
+        </MainLayout>
+      </ProtectedRoute>
     );
   }
 
   return (
-    <MainLayout>
+    <ProtectedRoute>
+      <MainLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Dashboard</h1>
@@ -105,7 +108,7 @@ export default function Home() {
                             {ticket.title}
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                            #{ticket.id} • {ticket.priority} Priority • {formatTimeAgo(ticket.createdAt)}
+                            #{ticket.id} • {ticket.priority} Priority • {formatTimeAgo(ticket.created_at)}
                           </p>
                         </div>
                         <div className="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
@@ -144,6 +147,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </MainLayout>
+      </MainLayout>
+    </ProtectedRoute>
   );
 }

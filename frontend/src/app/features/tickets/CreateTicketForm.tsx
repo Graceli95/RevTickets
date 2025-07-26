@@ -6,7 +6,8 @@ import { Button, Card, Label, TextInput, Textarea, Select } from 'flowbite-react
 import { Save, X, AlertCircle } from 'lucide-react';
 import { ticketsApi, categoriesApi, subCategoriesApi } from '../../../lib/api';
 import { RichTextEditor } from '../../shared/components';
-import type { Category, SubCategory, CreateTicket, TicketPriority, TicketSeverity } from '../../shared/types';
+import type { Category, SubCategory, CreateTicketRequest, TicketPriority, TicketSeverity, RichTextContent } from '../../shared/types';
+import { createEmptyRichText, isRichTextEmpty } from '../../../lib/utils';
 
 export function CreateTicketForm() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export function CreateTicketForm() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    content: '',
+    content: createEmptyRichText(),
     categoryId: '',
     subCategoryId: '',
     priority: 'medium' as TicketPriority,
@@ -33,7 +34,7 @@ export function CreateTicketForm() {
 
   useEffect(() => {
     if (formData.categoryId) {
-      const filtered = subCategories.filter(sub => sub.categoryId === formData.categoryId);
+      const filtered = subCategories.filter(sub => sub.category_id === formData.categoryId);
       setFilteredSubCategories(filtered);
       // Reset subcategory if it doesn't belong to the selected category
       if (formData.subCategoryId && !filtered.find(sub => sub.id === formData.subCategoryId)) {
@@ -42,7 +43,7 @@ export function CreateTicketForm() {
     } else {
       setFilteredSubCategories([]);
     }
-  }, [formData.categoryId, subCategories]);
+  }, [formData.categoryId, formData.subCategoryId, subCategories]);
 
   const fetchFormData = async () => {
     try {
@@ -68,6 +69,14 @@ export function CreateTicketForm() {
     }
   };
 
+  const handleContentChange = (content: RichTextContent) => {
+    setFormData(prev => ({ ...prev, content }));
+    // Clear error when user starts typing
+    if (errors.content) {
+      setErrors(prev => ({ ...prev, content: '' }));
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -77,7 +86,7 @@ export function CreateTicketForm() {
     if (!formData.description.trim()) {
       newErrors.description = 'Summary is required';
     }
-    if (!formData.content.trim()) {
+    if (isRichTextEmpty(formData.content)) {
       newErrors.content = 'Detailed description is required';
     }
     if (!formData.categoryId) {
@@ -101,13 +110,18 @@ export function CreateTicketForm() {
     try {
       setSubmitting(true);
       
-      const ticketData: CreateTicket = {
-        ...formData,
-        userId: 'current-user-id', // TODO: Get from auth context
-        tagIds: [], // TODO: Add tag selection
+      const ticketData: CreateTicketRequest = {
+        category_id: formData.categoryId,
+        sub_category_id: formData.subCategoryId,
+        title: formData.title,
+        description: formData.description,
+        content: formData.content,
+        priority: formData.priority,
+        severity: formData.severity,
+        tag_ids: [], // TODO: Add tag selection
       };
 
-      const newTicket = await ticketsApi.create(ticketData);
+      await ticketsApi.create(ticketData);
       
       // Redirect to tickets list with success message
       router.push('/tickets?success=created');
@@ -147,7 +161,7 @@ export function CreateTicketForm() {
 
         {/* Title */}
         <div>
-          <Label htmlFor="title" value="Title *" className="mb-2 block" />
+          <Label htmlFor="title" className="mb-2 block">Title *</Label>
           <TextInput
             id="title"
             placeholder="Brief title describing your issue"
@@ -163,7 +177,7 @@ export function CreateTicketForm() {
 
         {/* Summary/Description */}
         <div>
-          <Label htmlFor="description" value="Summary *" className="mb-2 block" />
+          <Label htmlFor="description" className="mb-2 block">Summary *</Label>
           <Textarea
             id="description"
             placeholder="Brief summary of your issue (1-2 sentences)"
@@ -181,7 +195,7 @@ export function CreateTicketForm() {
         {/* Category and Subcategory */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="category" value="Category *" className="mb-2 block" />
+            <Label htmlFor="category" className="mb-2 block">Category *</Label>
             <Select
               id="category"
               value={formData.categoryId}
@@ -202,7 +216,7 @@ export function CreateTicketForm() {
           </div>
 
           <div>
-            <Label htmlFor="subcategory" value="Subcategory *" className="mb-2 block" />
+            <Label htmlFor="subcategory" className="mb-2 block">Subcategory *</Label>
             <Select
               id="subcategory"
               value={formData.subCategoryId}
@@ -227,7 +241,7 @@ export function CreateTicketForm() {
         {/* Priority and Severity */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="priority" value="Priority" className="mb-2 block" />
+            <Label htmlFor="priority" className="mb-2 block">Priority</Label>
             <Select
               id="priority"
               value={formData.priority}
@@ -244,7 +258,7 @@ export function CreateTicketForm() {
           </div>
 
           <div>
-            <Label htmlFor="severity" value="Severity" className="mb-2 block" />
+            <Label htmlFor="severity" className="mb-2 block">Severity</Label>
             <Select
               id="severity"
               value={formData.severity}
@@ -263,11 +277,11 @@ export function CreateTicketForm() {
 
         {/* Detailed Description */}
         <div>
-          <Label htmlFor="content" value="Detailed Description *" className="mb-2 block" />
+          <Label htmlFor="content" className="mb-2 block">Detailed Description *</Label>
           <div className="space-y-2">
             <RichTextEditor
               content={formData.content}
-              onChange={(content) => handleInputChange('content', content)}
+              onChange={handleContentChange}
               placeholder="Provide detailed information about your issue. Include steps to reproduce, error messages, screenshots, or any other relevant details."
               className="min-h-[200px]"
             />

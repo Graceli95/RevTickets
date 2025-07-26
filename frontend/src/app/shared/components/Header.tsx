@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React from 'react';
 import { 
   Avatar, 
   Button, 
@@ -12,19 +12,24 @@ import {
   Navbar, 
   NavbarBrand 
 } from 'flowbite-react';
-import { Bell, Menu } from 'lucide-react';
+import { Bell, Menu, LogOut } from 'lucide-react';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
 }
 
 export function Header({ onToggleSidebar }: HeaderProps) {
-  // Mock user data - in real app, get from auth context
-  const currentUser = {
-    name: 'John Doe',
-    email: 'john@example.com',
-    username: 'johndoe', // Used for DiceBear avatar
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/auth/login');
   };
+
+  if (!user) return null;
 
   return (
     <Navbar fluid className="border-b border-orange-200 dark:border-orange-800 bg-white dark:bg-gray-900 shadow-sm">
@@ -67,15 +72,16 @@ export function Header({ onToggleSidebar }: HeaderProps) {
           label={
             <Avatar 
               alt="User settings" 
-              img={`https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.username}&backgroundColor=fb923c,f97316,ea580c&textColor=ffffff`}
+              img={`https://api.dicebear.com/7.x/initials/svg?seed=${user.first_name} ${user.last_name}&backgroundColor=fb923c,f97316,ea580c&textColor=ffffff`}
               rounded 
               className="ring-2 ring-orange-200 dark:ring-orange-800"
             />
           }
         >
           <DropdownHeader>
-            <span className="block text-sm font-medium text-gray-900 dark:text-white">{currentUser.name}</span>
-            <span className="block truncate text-sm text-gray-500 dark:text-gray-400">{currentUser.email}</span>
+            <span className="block text-sm font-medium text-gray-900 dark:text-white">{user.first_name} {user.last_name}</span>
+            <span className="block truncate text-sm text-gray-500 dark:text-gray-400">{user.email}</span>
+            <span className="block text-xs text-orange-600 dark:text-orange-400 capitalize">{user.role}</span>
           </DropdownHeader>
           <DropdownItem className="hover:bg-orange-50 dark:hover:bg-orange-900/20">
             Profile
@@ -84,7 +90,11 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             Settings
           </DropdownItem>
           <DropdownDivider />
-          <DropdownItem className="hover:bg-orange-50 dark:hover:bg-orange-900/20">
+          <DropdownItem 
+            className="hover:bg-orange-50 dark:hover:bg-orange-900/20"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
             Sign out
           </DropdownItem>
         </Dropdown>

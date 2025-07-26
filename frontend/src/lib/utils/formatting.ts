@@ -1,4 +1,4 @@
-import type { TicketStatus, TicketPriority, TicketSeverity } from '../../types';
+import type { TicketStatus, TicketPriority, TicketSeverity } from '../../app/shared/types';
 import { 
   STATUS_COLORS, 
   PRIORITY_COLORS, 

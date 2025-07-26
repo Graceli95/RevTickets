@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import type { User } from '../types';
+import type { User } from '../app/shared/types';
+import { apiClient } from '../lib/api/client';
 
 interface AuthState {
   user: User | null;
@@ -80,32 +81,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check for existing auth token on mount
     const token = localStorage.getItem('authToken');
     if (token) {
-      // TODO: Validate token and get user info
-      // For now, we'll assume the token is valid
+      // Validate token and get user info
+      validateToken();
     }
   }, []);
+
+  const validateToken = async () => {
+    try {
+      const userResponse = await apiClient.get<User>('/users/profile');
+      dispatch({ type: 'SET_USER', payload: userResponse });
+    } catch {
+      // Token is invalid, remove it
+      localStorage.removeItem('authToken');
+      dispatch({ type: 'LOGOUT' });
+    }
+  };
 
   const login = async (email: string, password: string): Promise<void> => {
     dispatch({ type: 'LOGIN_START' });
     
     try {
-      // TODO: Replace with actual API call
-      const mockUser: User = {
-        id: '1',
-        name: 'John Doe',
-        email: email,
-        role: 'user',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      // Create form data for OAuth2 login
+      const formData = new FormData();
+      formData.append('username', email);
+      formData.append('password', password);
+
+      // Login API call
+      const loginResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/login`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!loginResponse.ok) {
+        throw new Error('Invalid credentials');
+      }
+
+      const { access_token } = await loginResponse.json();
+      localStorage.setItem('authToken', access_token);
+
+      // Get user profile
+      const userResponse = await apiClient.get<User>('/users/profile');
       
-      localStorage.setItem('authToken', 'mock-token');
-      dispatch({ type: 'LOGIN_SUCCESS', payload: mockUser });
+      dispatch({ type: 'LOGIN_SUCCESS', payload: userResponse });
     } catch (error) {
       dispatch({ 
         type: 'LOGIN_FAILURE', 
         payload: error instanceof Error ? error.message : 'Login failed' 
       });
+      throw error;
     }
   };
 

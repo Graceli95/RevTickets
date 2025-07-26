@@ -1,11 +1,12 @@
 from beanie import Document,Link, PydanticObjectId
 from pydantic import Field
 from typing import Optional, List, Dict
-from datetime import datetime
+from datetime import datetime, timezone
 from .category import Category
 from .subcategory import SubCategory
 from .enums import TicketStatus, TicketPriority, TicketSeverity
 from .user import User
+from .rich_text import RichTextContent
 class Ticket(Document):
     id: Optional[PydanticObjectId] = Field(default=None, alias="_id", description="Primary key (MongoDB ObjectId)")
     categoryId: Link[Category] = Field(..., description="ID of the category this ticket belongs to")
@@ -15,15 +16,15 @@ class Ticket(Document):
     
     title: str = Field(..., description="Title of the ticket")
     description: str = Field(..., description="Detailed description of the ticket")
-    content: str=  Field(..., description="Content of the ticket, can be rich text")
+    content: RichTextContent = Field(..., description="Rich text content of the ticket with HTML, JSON, and plain text formats")
     tagIds: Optional[List[Dict[str, str]]] = Field(default_factory=list, description="List of tag IDs associated with the ticket")
 
     status: TicketStatus = Field(default=TicketStatus.open, description="Status of the ticket") 
     priority: TicketPriority = Field(default=TicketPriority.medium, description="Priority: low, medium, high")
     severity: TicketSeverity = Field(default=TicketSeverity.low, description="Severity of the issue")
 
-    createdAt: datetime = Field(default_factory=datetime.utcnow)
-    updatedAt: datetime = Field(default_factory=datetime.utcnow)
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updatedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     closedAt: Optional[datetime] = None
 
     class Settings:
