@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from jose import JWTError
 from src.models.user import User
+from src.models.enums import UserRole
 
 import jwt
 from src.models.user import User
@@ -53,3 +54,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         return user
     except JWTError:
         raise credentials_exception
+async def get_current_agent_user(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.role != UserRole.agent:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access restricted to agents only"
+        )
+    return current_user
