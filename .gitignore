@@ -5,3 +5,4 @@ ENHANCEMENTS_AND_BUGS.md
 .venv
 .qodo
 __pycache__
+docker-compose.yml
