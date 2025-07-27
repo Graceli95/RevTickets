@@ -2,8 +2,13 @@ from fastapi import APIRouter, HTTPException, Depends
 from src.schemas.subcategory import SubCategoryCreate, SubCategoryUpdate, SubCategoryResponse
 from src.services.subcategory_service import SubCategoryService
 from src.utils.security import get_current_user
+from typing import List
 
 router = APIRouter(prefix="/subcategories", tags=["SubCategories"], dependencies=[Depends(get_current_user)])
+
+@router.get("/", response_model=List[SubCategoryResponse])
+async def get_all_subcategories():
+    return await SubCategoryService.get_all_subcategories()
 
 @router.post("/", response_model=SubCategoryResponse)
 async def create_subcategory(subcategory: SubCategoryCreate):

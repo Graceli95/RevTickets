@@ -18,6 +18,18 @@ class SubCategoryService:
         return SubCategoryResponse(**subcategory_dict)
 
     @staticmethod
+    async def get_all_subcategories() -> List[SubCategoryResponse]:
+        subcategories = await SubCategory.find_all().to_list()
+        result = []
+        for subcategory in subcategories:
+            subcategory_dict = subcategory.model_dump()
+            subcategory_dict["id"] = str(subcategory.id)
+            if subcategory.category:
+                subcategory_dict["category"]["id"] = str(subcategory.category.id)
+            result.append(SubCategoryResponse(**subcategory_dict))
+        return result
+
+    @staticmethod
     async def get_subcategory(subcategory_id: str) -> SubCategoryResponse:
         subcategory = await SubCategory.get(subcategory_id)
         if not subcategory:
