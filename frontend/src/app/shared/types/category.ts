@@ -8,14 +8,6 @@ export interface Category {
   updated_at: string;
 }
 
-export interface SubCategory {
-  id: string;
-  category_id: string;
-  name: string;
-  description: string;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface Tag {
   id: string;
@@ -30,11 +22,6 @@ export interface CreateCategoryRequest {
   description: string;
 }
 
-export interface CreateSubCategoryRequest {
-  category_id: string;
-  name: string;
-  description: string;
-}
 
 export interface CreateTagRequest {
   key: string;

@@ -17,3 +17,4 @@ class SubCategoryUpdate(BaseModel):
 
 class SubCategoryResponse(SubCategoryBase):
     id: str
+    category: Optional[CategoryResponse] = None

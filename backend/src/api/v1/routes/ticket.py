@@ -1,27 +1,47 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from typing import List
 from beanie import PydanticObjectId
+from datetime import datetime, timezone
 from src.models.user import User
+from src.models.enums import TicketStatus
 from src.schemas.ticket import TicketCreate, TicketUpdate, TicketResponse
+from src.schemas.comment import CommentCreate, CommentResponse
 from src.services.ticket_service import TicketService
-from src.utils.security import get_current_user
-from src.services.ai_service import AIService
-from src.schemas.summary import TicketSummaryResponse
-from src.schemas.closing_comments import ClosingComments
-from src.utils.security import get_current_agent_user
+from src.services.comment_service import CommentService
+from src.utils.security import get_current_user, get_current_agent_user
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/tickets", tags=["Tickets"], dependencies=[Depends(get_current_user)])
 
+# Request models
+class AssignTicketRequest(BaseModel):
+    agent_id: str
+
+class UpdateStatusRequest(BaseModel):
+    status: TicketStatus
+
+class CloseTicketRequest(BaseModel):
+    resolution_comment: str = None
+
 @router.post("/", response_model=TicketResponse)
-async def create_ticket(ticket_data: TicketCreate):
-    return await TicketService.create_ticket(ticket_data)
+async def create_ticket(ticket_data: TicketCreate, current_user: User = Depends(get_current_user)):
+    return await TicketService.create_ticket(ticket_data, current_user)
 
 @router.get("/", response_model=List[TicketResponse])
-async def get_all_tickets():
-    return await TicketService.get_all_tickets()
+async def get_all_tickets(current_user: User = Depends(get_current_user)):
+    return await TicketService.get_all_tickets(current_user)
+
+@router.get("/stats")
+async def get_ticket_stats(current_user: User = Depends(get_current_user)):
+    """Get ticket statistics"""
+    return await TicketService.get_ticket_stats(current_user)
 
 @router.get("/{ticket_id}", response_model=TicketResponse)
-async def get_ticket(ticket_id: PydanticObjectId):
+async def get_ticket(ticket_id: PydanticObjectId, current_user: User = Depends(get_current_user)):
+    # Check access permissions
+    if not await TicketService.can_access_ticket(ticket_id, current_user):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
     ticket = await TicketService.get_ticket(ticket_id)
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
@@ -42,6 +62,69 @@ async def delete_ticket(ticket_id: PydanticObjectId):
 @router.get("/user/", response_model=List[TicketResponse])
 async def get_tickets_by_user(current_user: User = Depends(get_current_user)):
     return await TicketService.get_tickets_by_user(current_user=current_user)
+
+# Queue management endpoints for agents
+@router.get("/queue/", response_model=List[TicketResponse])
+async def get_queue_tickets(current_user: User = Depends(get_current_agent_user)):
+    """Get unassigned tickets in agent's skill categories"""
+    return await TicketService.get_queue_tickets(current_user)
+
+@router.get("/assigned/", response_model=List[TicketResponse])
+async def get_my_assigned_tickets(current_user: User = Depends(get_current_agent_user)):
+    """Get tickets assigned to the current agent"""
+    return await TicketService.get_my_assigned_tickets(current_user)
+
+# Assignment endpoints
+@router.post("/{ticket_id}/assign", response_model=TicketResponse)
+async def assign_ticket(ticket_id: PydanticObjectId, request: AssignTicketRequest, current_user: User = Depends(get_current_agent_user)):
+    return await TicketService.assign_ticket(ticket_id, request.agent_id)
+
+@router.post("/{ticket_id}/auto-assign", response_model=TicketResponse)
+async def auto_assign_ticket(ticket_id: PydanticObjectId, current_user: User = Depends(get_current_agent_user)):
+    return await TicketService.auto_assign_ticket(ticket_id)
+
+# Status management endpoints
+@router.patch("/{ticket_id}/status", response_model=TicketResponse)
+async def update_ticket_status(ticket_id: PydanticObjectId, request: UpdateStatusRequest):
+    return await TicketService.update_ticket_status(ticket_id, request.status)
+
+@router.post("/{ticket_id}/close", response_model=TicketResponse)
+async def close_ticket(ticket_id: PydanticObjectId, request: CloseTicketRequest = None):
+    resolution_comment = request.resolution_comment if request else None
+    return await TicketService.close_ticket(ticket_id, resolution_comment)
+
+@router.post("/{ticket_id}/resolve", response_model=TicketResponse)
+async def resolve_ticket(ticket_id: PydanticObjectId, request: CloseTicketRequest = None):
+    resolution_comment = request.resolution_comment if request else None
+    return await TicketService.resolve_ticket(ticket_id, resolution_comment)
+
+@router.post("/{ticket_id}/reopen", response_model=TicketResponse)
+async def reopen_ticket(ticket_id: PydanticObjectId):
+    return await TicketService.reopen_ticket(ticket_id)
+
+@router.get("/{ticket_id}/can-reopen")
+async def can_reopen_ticket(ticket_id: PydanticObjectId):
+    can_reopen = await TicketService.can_reopen_ticket(ticket_id)
+    return {"can_reopen": can_reopen}
+
+# Comment routes within ticket context
+@router.get("/{ticket_id}/comments", response_model=List[CommentResponse])
+async def get_ticket_comments(ticket_id: PydanticObjectId):
+    """Get all comments for a specific ticket"""
+    return await CommentService.get_comments_by_ticket(str(ticket_id))
+
+@router.post("/{ticket_id}/comments", response_model=CommentResponse)
+async def create_ticket_comment(ticket_id: PydanticObjectId, comment_data: dict, current_user: User = Depends(get_current_user)):
+    """Create a new comment for a specific ticket"""
+    # Build the comment create object with ticket and user context
+    comment_create = CommentCreate(
+        content=comment_data["content"],
+        ticketId=ticket_id,
+        userId=current_user.id,
+        createdAt=datetime.now(timezone.utc),
+        updatedAt=datetime.now(timezone.utc)
+    )
+    return await CommentService.create_comment(comment_create)
 
 
 

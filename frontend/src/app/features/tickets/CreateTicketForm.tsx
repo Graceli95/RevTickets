@@ -12,7 +12,6 @@ import { createEmptyRichText, isRichTextEmpty } from '../../../lib/utils';
 export function CreateTicketForm() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [filteredSubCategories, setFilteredSubCategories] = useState<SubCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -33,29 +32,32 @@ export function CreateTicketForm() {
   }, []);
 
   useEffect(() => {
-    if (formData.categoryId) {
-      const filtered = subCategories.filter(sub => sub.category_id === formData.categoryId);
-      setFilteredSubCategories(filtered);
-      // Reset subcategory if it doesn't belong to the selected category
-      if (formData.subCategoryId && !filtered.find(sub => sub.id === formData.subCategoryId)) {
-        setFormData(prev => ({ ...prev, subCategoryId: '' }));
+    const fetchSubCategories = async () => {
+      if (formData.categoryId) {
+        try {
+          const subCategoriesData = await subCategoriesApi.getByCategoryId(formData.categoryId);
+          setFilteredSubCategories(subCategoriesData);
+          // Reset subcategory selection when category changes
+          setFormData(prev => ({ ...prev, subCategoryId: '' }));
+        } catch (error) {
+          console.error('Failed to fetch subcategories:', error);
+          setFilteredSubCategories([]);
+        }
+      } else {
+        setFilteredSubCategories([]);
       }
-    } else {
-      setFilteredSubCategories([]);
-    }
-  }, [formData.categoryId, formData.subCategoryId, subCategories]);
+    };
+
+    fetchSubCategories();
+  }, [formData.categoryId]);
 
   const fetchFormData = async () => {
     try {
       setLoading(true);
-      const [categoriesData, subCategoriesData] = await Promise.all([
-        categoriesApi.getAll(),
-        subCategoriesApi.getAll(),
-      ]);
+      const categoriesData = await categoriesApi.getAll();
       setCategories(categoriesData);
-      setSubCategories(subCategoriesData);
     } catch (error) {
-      console.error('Failed to fetch form data:', error);
+      console.error('Failed to fetch categories:', error);
     } finally {
       setLoading(false);
     }

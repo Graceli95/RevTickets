@@ -38,7 +38,7 @@ def create_empty_rich_text() -> RichTextContent:
     """Create an empty RichTextContent object"""
     return RichTextContent(
         html="",
-        json_content={"type": "doc", "content": []},
+        json={"type": "doc", "content": []},
         text=""
     )
 
@@ -50,7 +50,7 @@ def create_rich_text_from_html(html: str) -> RichTextContent:
     
     return RichTextContent(
         html=html,
-        json_content={"type": "doc", "content": []},  # Will be populated by frontend editor
+        json={"type": "doc", "content": []},  # Will be populated by frontend editor
         text=text
     )
 
@@ -75,6 +75,6 @@ def create_rich_text_from_text(text: str) -> RichTextContent:
     
     return RichTextContent(
         html=html,
-        json_content=json_content,
+        json=json_content,
         text=text
     )

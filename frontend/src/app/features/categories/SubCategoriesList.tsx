@@ -57,7 +57,7 @@ export function SubCategoriesList() {
     setFormData({
       name: subCategory.name,
       description: subCategory.description,
-      categoryId: subCategory.category_id,
+      categoryId: subCategory.category?.id || '',
     });
     setShowModal(true);
   };
@@ -191,7 +191,7 @@ export function SubCategoriesList() {
                         <div className="flex items-center space-x-2">
                           <FolderOpen className="h-3 w-3 text-gray-500 dark:text-gray-400" />
                           <span className="text-gray-600 dark:text-gray-400">
-                            {getCategoryName(subCategory.category_id)}
+                            {subCategory.category?.name || 'Unknown'}
                           </span>
                         </div>
                       </TableCell>

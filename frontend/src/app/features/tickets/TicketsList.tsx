@@ -33,14 +33,6 @@ export function TicketsList() {
   const [sortField, setSortField] = useState<SortField>('updated_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-  useEffect(() => {
-    fetchTickets();
-  }, [statusFilter, priorityFilter]);
-
-  useEffect(() => {
-    applyFiltersAndSorting();
-  }, [allTickets, searchQuery, sortField, sortDirection, currentPage]);
-
   const fetchTickets = useCallback(async () => {
     try {
       setLoading(true);
@@ -96,13 +88,11 @@ export function TicketsList() {
       else if (sortField === 'status') {
         const statusOrder = { 
           'new': 1, 
-          'open': 2, 
-          'assigned': 3, 
-          'in_progress': 4, 
-          'waiting_for_customer': 5, 
-          'waiting_for_agent': 6, 
-          'resolved': 7, 
-          'closed': 8 
+          'in_progress': 2, 
+          'waiting_for_customer': 3, 
+          'waiting_for_agent': 4, 
+          'resolved': 5, 
+          'closed': 6 
         };
         aValue = statusOrder[aValue as keyof typeof statusOrder] || 0;
         bValue = statusOrder[bValue as keyof typeof statusOrder] || 0;
@@ -127,6 +117,15 @@ export function TicketsList() {
 
     setTickets(paginatedTickets);
   }, [allTickets, searchQuery, sortField, sortDirection, currentPage, itemsPerPage]);
+
+  // Effects
+  useEffect(() => {
+    fetchTickets();
+  }, [statusFilter, priorityFilter, fetchTickets]);
+
+  useEffect(() => {
+    applyFiltersAndSorting();
+  }, [allTickets, searchQuery, sortField, sortDirection, currentPage, applyFiltersAndSorting]);
 
   const handleSearch = () => {
     setCurrentPage(1); // Reset to first page when searching
@@ -211,7 +210,6 @@ export function TicketsList() {
           >
             <option value="all">All Status</option>
             <option value="new">New</option>
-            <option value="open">Open</option>
             <option value="in_progress">In Progress</option>
             <option value="waiting_for_agent">Waiting for Agent</option>
             <option value="waiting_for_customer">Waiting for Customer</option>

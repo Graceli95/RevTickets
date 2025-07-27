@@ -24,12 +24,6 @@ export function TicketViewModal({ ticketId, isOpen, onClose }: TicketViewModalPr
   const [newComment, setNewComment] = useState<RichTextContent>(createEmptyRichText());
   const [submittingComment, setSubmittingComment] = useState(false);
 
-  useEffect(() => {
-    if (ticketId && isOpen) {
-      fetchTicketData();
-    }
-  }, [ticketId, isOpen]);
-
   const fetchTicketData = useCallback(async () => {
     if (!ticketId) return;
 
@@ -47,6 +41,12 @@ export function TicketViewModal({ ticketId, isOpen, onClose }: TicketViewModalPr
       setLoading(false);
     }
   }, [ticketId]);
+
+  useEffect(() => {
+    if (ticketId && isOpen) {
+      fetchTicketData();
+    }
+  }, [ticketId, isOpen, fetchTicketData]);
 
   const handleAddComment = async () => {
     if (!ticketId || !newComment.text.trim()) return;

@@ -17,10 +17,10 @@ class UserInfo(BaseModel):
     name: Optional[str] = None
 
 class TicketBase(BaseModel):
-    categoryId: PydanticObjectId
-    subCategoryId: PydanticObjectId
-    userId: str
-    agentId: Optional[str] = None
+    category_id: PydanticObjectId = Field(..., alias="categoryId")
+    sub_category_id: PydanticObjectId = Field(..., alias="subCategoryId") 
+    user_id: str = Field(..., alias="userId")
+    agent_id: Optional[str] = Field(None, alias="agentId")
     title: str
     description: str
     content: RichTextContent
@@ -28,8 +28,15 @@ class TicketBase(BaseModel):
     priority: TicketPriority
     severity: TicketSeverity
 
-class TicketCreate(TicketBase):
-    tagData: Optional[List[TagData]] = []
+class TicketCreate(BaseModel):
+    category_id: PydanticObjectId
+    sub_category_id: PydanticObjectId
+    title: str
+    description: str
+    content: RichTextContent
+    priority: TicketPriority = TicketPriority.medium
+    severity: TicketSeverity = TicketSeverity.low
+    tag_ids: Optional[List[Dict[str, str]]] = []
 
 class TicketUpdate(TicketBase):
     tagIds: Optional[List[str]]

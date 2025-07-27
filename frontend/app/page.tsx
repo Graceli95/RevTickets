@@ -19,7 +19,7 @@ export default function Home() {
       try {
         const [statsData, ticketsData] = await Promise.all([
           ticketsApi.getStats(),
-          ticketsApi.getAll({ status: 'open' })
+          ticketsApi.getAll({ status: 'new' })
         ]);
         
         setStats(statsData);
@@ -73,8 +73,8 @@ export default function Home() {
             change={{ value: "+12%", trend: "up" }}
           />
           <StatsCard
-            title="Open Tickets"
-            value={stats?.open || 0}
+            title="New Tickets"
+            value={stats?.new || 0}
             icon={Clock}
             change={{ value: "-5%", trend: "down" }}
           />

@@ -62,11 +62,16 @@ class CategoryService:
         for sub in subcategories:
             sub_dict = sub.model_dump()
             sub_dict["id"] = str(sub.id)
-            sub_dict["category"] = {
-                "id": str(sub.category.id),
-                "name": sub.category.name,
-                "description": sub.category.description,
-                "tags": sub.category.tags
-            }
+            
+            # Get the category by ID instead of using fetch_link
+            if sub.category and sub.category.ref:
+                category = await Category.get(sub.category.ref.id)
+                if category:
+                    sub_dict["category"] = {
+                        "id": str(category.id),
+                        "name": category.name,
+                        "description": category.description
+                    }
+            
             response.append(SubCategoryResponse(**sub_dict))
         return response

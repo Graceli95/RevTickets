@@ -1,6 +1,6 @@
 // Ticket-related types matching backend API
 
-export type TicketStatus = 'new' | 'open' | 'assigned' | 'in_progress' | 'waiting_for_customer' | 'waiting_for_agent' | 'resolved' | 'closed';
+export type TicketStatus = 'new' | 'in_progress' | 'waiting_for_customer' | 'waiting_for_agent' | 'resolved' | 'closed';
 export type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
 export type TicketSeverity = 'low' | 'medium' | 'high' | 'critical';
 
@@ -54,8 +54,6 @@ export interface UpdateTicketRequest {
 export interface TicketStats {
   total: number;
   new: number;
-  open: number;
-  assigned: number;
   in_progress: number;
   waiting_for_customer: number;
   waiting_for_agent: number;

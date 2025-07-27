@@ -1,10 +1,12 @@
 from enum import Enum
 
 class TicketStatus(str, Enum):
-    open = "open"
+    new = "new"
     in_progress = "in_progress"
+    waiting_for_customer = "waiting_for_customer"
+    waiting_for_agent = "waiting_for_agent"
     closed = "closed"
-    on_hold = "on_hold"
+    resolved = "resolved"
 
 class TicketPriority(str, Enum):
     low = "low"

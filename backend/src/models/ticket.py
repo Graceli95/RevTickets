@@ -19,7 +19,7 @@ class Ticket(Document):
     content: RichTextContent = Field(..., description="Rich text content of the ticket with HTML, JSON, and plain text formats")
     tagIds: Optional[List[Dict[str, str]]] = Field(default_factory=list, description="List of tag IDs associated with the ticket")
 
-    status: TicketStatus = Field(default=TicketStatus.open, description="Status of the ticket") 
+    status: TicketStatus = Field(default=TicketStatus.new, description="Status of the ticket") 
     priority: TicketPriority = Field(default=TicketPriority.medium, description="Priority: low, medium, high")
     severity: TicketSeverity = Field(default=TicketSeverity.low, description="Severity of the issue")
 

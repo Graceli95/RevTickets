@@ -1,6 +1,6 @@
 # src/routers/user_router.py
 from fastapi import APIRouter, Depends, HTTPException
-from src.schemas.user import UserCreate, UserResponse, UserLogin
+from src.schemas.user import UserCreate, UserResponse, UserLogin, UserUpdate
 from src.services.user_service import UserService
 from src.models.user import User
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -13,14 +13,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 @router.post("/register", response_model=UserResponse)
 async def register_user(user: UserCreate):
     user_doc = await UserService.register_user(user)
-    return UserResponse(
-        id=str(user_doc.id),
-        first_name=user_doc.first_name,
-        last_name=user_doc.last_name,
-        email=user_doc.email,
-        role=user_doc.role,
-        created_at=user_doc.created_at
-    )
+    return await UserService.user_to_response(user_doc)
 
 @router.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -42,15 +35,18 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
 
 @router.get("/profile", response_model=UserResponse)
 async def get_profile(current_user: User = Depends(get_current_user)):
-    return UserResponse(
-        id=str(current_user.id),
-        first_name=current_user.first_name,
-        last_name=current_user.last_name,
-        email=current_user.email,
-        role=current_user.role,
-        created_at=current_user.created_at,
+    return await UserService.user_to_response(current_user)
 
-    )
+@router.put("/profile", response_model=UserResponse)
+async def update_profile(user_data: UserUpdate, current_user: User = Depends(get_current_user)):
+    return await UserService.update_user(str(current_user.id), user_data)
+
+@router.get("/{user_id}", response_model=UserResponse)
+async def get_user(user_id: str):
+    user_response = await UserService.get_user_by_id(user_id)
+    if not user_response:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user_response
 
 @router.post("/logout")
 async def logout(current_user: User = Depends(get_current_user)):

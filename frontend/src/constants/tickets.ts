@@ -2,8 +2,6 @@ import type { TicketStatus, TicketPriority, TicketSeverity } from '../app/shared
 
 export const TICKET_STATUS: Record<string, TicketStatus> = {
   NEW: 'new',
-  OPEN: 'open',
-  ASSIGNED: 'assigned',
   IN_PROGRESS: 'in_progress',
   WAITING_FOR_CUSTOMER: 'waiting_for_customer',
   WAITING_FOR_AGENT: 'waiting_for_agent',
@@ -27,8 +25,6 @@ export const TICKET_SEVERITY: Record<string, TicketSeverity> = {
 
 export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
   new: 'New',
-  open: 'Open',
-  assigned: 'Assigned',
   in_progress: 'In Progress',
   waiting_for_customer: 'Waiting for Customer',
   waiting_for_agent: 'Waiting for Agent',
@@ -52,8 +48,6 @@ export const SEVERITY_LABELS: Record<TicketSeverity, string> = {
 
 export const STATUS_COLORS: Record<TicketStatus, string> = {
   new: 'text-blue-600 bg-blue-100',
-  open: 'text-green-600 bg-green-100',
-  assigned: 'text-yellow-600 bg-yellow-100',
   in_progress: 'text-orange-600 bg-orange-100',
   waiting_for_customer: 'text-purple-600 bg-purple-100',
   waiting_for_agent: 'text-indigo-600 bg-indigo-100',

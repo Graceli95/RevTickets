@@ -1,6 +1,13 @@
 // User-related types matching backend API
+import { Category } from './category';
+import { SubCategory } from './subcategory';
 
 export type UserRole = 'user' | 'agent';
+
+export interface AgentSkills {
+  category?: Category;
+  subcategories?: SubCategory[];
+}
 
 export interface User {
   id: string;
@@ -8,8 +15,8 @@ export interface User {
   last_name: string;
   email: string;
   role: UserRole;
+  agent_skills?: AgentSkills; // Only present for agents
   created_at: string;
-  updated_at: string;
 }
 
 export interface LoginRequest {

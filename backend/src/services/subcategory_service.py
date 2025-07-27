@@ -24,8 +24,17 @@ class SubCategoryService:
         for subcategory in subcategories:
             subcategory_dict = subcategory.model_dump()
             subcategory_dict["id"] = str(subcategory.id)
-            if subcategory.category:
-                subcategory_dict["category"]["id"] = str(subcategory.category.id)
+            
+            # Get the category by ID instead of using fetch_link
+            if subcategory.category and subcategory.category.ref:
+                category = await Category.get(subcategory.category.ref.id)
+                if category:
+                    subcategory_dict["category"] = {
+                        "id": str(category.id),
+                        "name": category.name,
+                        "description": category.description
+                    }
+            
             result.append(SubCategoryResponse(**subcategory_dict))
         return result
 
@@ -34,9 +43,21 @@ class SubCategoryService:
         subcategory = await SubCategory.get(subcategory_id)
         if not subcategory:
             return None 
+        
         subcategory_dict = subcategory.model_dump()
         subcategory_dict["id"] = str(subcategory.id)
-        return SubCategory(**subcategory_dict)
+        
+        # Get the category by ID instead of using fetch_link
+        if subcategory.category and subcategory.category.ref:
+            category = await Category.get(subcategory.category.ref.id)
+            if category:
+                subcategory_dict["category"] = {
+                    "id": str(category.id),
+                    "name": category.name,
+                    "description": category.description
+                }
+        
+        return SubCategoryResponse(**subcategory_dict)
 
     @staticmethod
     async def update_subcategory(subcategory_id: str, subcategory_data: SubCategoryUpdate) -> SubCategoryResponse:
