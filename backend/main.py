@@ -9,6 +9,7 @@ from src.api.v1.routes.subcategory import router as subcategory_router
 from src.api.v1.routes.comment import router as comment_router
 from src.api.v1.routes.user import router as user_router
 from src.api.v1.routes.article import router as article_router
+from src.api.v1.routes.ai import router as ai_router
 
 import sys
 import os
@@ -43,3 +44,4 @@ app.include_router(subcategory_router)
 app.include_router(comment_router)
 app.include_router(user_router)
 app.include_router(article_router)
+app.include_router(ai_router)

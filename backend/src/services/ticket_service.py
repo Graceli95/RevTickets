@@ -8,7 +8,7 @@ from src.schemas.category import CategoryResponse
 from src.schemas.subcategory import SubCategoryResponse
 from beanie import PydanticObjectId, Link
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class TicketService:
@@ -83,7 +83,7 @@ class TicketService:
     async def update_ticket(ticket_id: PydanticObjectId, data: TicketUpdate) -> Optional[TicketResponse]:
         ticket = await Ticket.get(ticket_id)
         if ticket:
-            ticket.updatedAt = datetime.utcnow()
+            ticket.updatedAt = datetime.now(timezone.utc)
             updated_ticket = await ticket.set(data.dict(exclude_unset=True))
             updated_ticket.id = str(updated_ticket.id)
             return await TicketService._build_ticket_response(updated_ticket)

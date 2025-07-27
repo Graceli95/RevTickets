@@ -1,10 +1,11 @@
 # src/models/user.py
-from beanie import Document
+from beanie import Document, Link
 from pydantic import EmailStr, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from .enums import UserRole
-
+from .category import Category
+from .subcategory import SubCategory
 class User(Document):
     first_name: str
     last_name: str

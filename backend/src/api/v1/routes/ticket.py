@@ -5,6 +5,10 @@ from src.models.user import User
 from src.schemas.ticket import TicketCreate, TicketUpdate, TicketResponse
 from src.services.ticket_service import TicketService
 from src.utils.security import get_current_user
+from src.services.ai_service import AIService
+from src.schemas.summary import TicketSummaryResponse
+from src.schemas.closing_comments import ClosingComments
+from src.utils.security import get_current_agent_user
 
 router = APIRouter(prefix="/tickets", tags=["Tickets"], dependencies=[Depends(get_current_user)])
 
@@ -38,5 +42,8 @@ async def delete_ticket(ticket_id: PydanticObjectId):
 @router.get("/user/", response_model=List[TicketResponse])
 async def get_tickets_by_user(current_user: User = Depends(get_current_user)):
     return await TicketService.get_tickets_by_user(current_user=current_user)
+
+
+
 
 

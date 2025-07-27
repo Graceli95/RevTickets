@@ -8,7 +8,6 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     role: Optional[str] = "user"
-
 class UserResponse(BaseModel):
     id: str
     first_name: str

@@ -4,7 +4,7 @@ from src.models.comment import Comment
 from src.models.ticket import Ticket
 from src.models.user import User
 from src.schemas.comment import CommentCreate, CommentResponse, CommentUpdate, UserInfo
-from datetime import datetime
+from datetime import datetime, timezone
 
 class CommentService:
     @staticmethod
@@ -96,7 +96,7 @@ class CommentService:
         
         # Update fields
         comment.content = comment_data.content or comment.content
-        comment.updatedAt = datetime.utcnow()
+        comment.updatedAt = datetime.now(timezone.utc)
         
         # Save changes
         comment = await comment.save()
