@@ -26,6 +26,9 @@ export const API_ENDPOINTS = {
     STATS: '/tickets/stats',
     SEARCH: '/tickets/search',
     COMMENTS: (ticketId: string) => `/tickets/${ticketId}/comments`,
+    // ENHANCEMENT L1 AI TICKET SUMMARY - AI endpoints
+    SUMMARY: (id: string) => `/tickets/${id}/summary`,
+    CLOSING_COMMENTS: (id: string) => `/tickets/${id}/closing_comments`,
   },
   
   // Categories

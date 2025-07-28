@@ -29,6 +29,9 @@ export interface Ticket {
   createdAt: string;
   updatedAt: string;
   closedAt?: string;
+  // ENHANCEMENT L1 AI TICKET SUMMARY - Add AI summary fields
+  aiSummary?: string;
+  summaryGeneratedAt?: string;
 }
 
 export interface UserInfo {
@@ -97,6 +100,15 @@ export interface CreateComment {
 
 export interface UpdateComment {
   content: RichTextContent;
+}
+
+// ENHANCEMENT L1 AI TICKET SUMMARY - AI summary types
+export interface TicketSummaryResponse {
+  summary: string;
+}
+
+export interface ClosingCommentsResponse {
+  suggestions: string[];
 }
 
 // Legacy aliases for backward compatibility

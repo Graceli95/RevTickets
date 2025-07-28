@@ -26,6 +26,10 @@ class Ticket(Document):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), alias="createdAt")
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), alias="updatedAt")
     closed_at: Optional[datetime] = Field(None, alias="closedAt")
+    
+    # ENHANCEMENT L1 AI TICKET SUMMARY - Store AI-generated summary
+    ai_summary: Optional[str] = Field(None, description="AI-generated summary of the ticket")
+    summary_generated_at: Optional[datetime] = Field(None, description="When the AI summary was generated")
 
     class Settings:
         name = "tickets"  # MongoDB collection name

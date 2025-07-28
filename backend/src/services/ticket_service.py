@@ -104,6 +104,9 @@ class TicketService:
             category=category,
             sub_category=subcategory,
             tag_ids=tag_data,
+            # ENHANCEMENT L1 AI TICKET SUMMARY - Include summary fields
+            ai_summary=ticket.ai_summary,
+            summary_generated_at=ticket.summary_generated_at,
             )
 
 
@@ -201,8 +204,34 @@ class TicketService:
             print(f"Auto-assignment failed for ticket {ticket.id}: {e}")
             # Don't fail the ticket creation if auto-assignment fails
             pass
+
+        # ENHANCEMENT L1 AI TICKET SUMMARY - Generate initial summary after ticket creation
+        try:
+            print(f"Generating AI summary for new ticket {ticket.id}")
+            # Import here to avoid circular imports
+            from src.services.ai_service import AIService
+            import asyncio
+            
+            # Fire and forget - don't wait for summary generation
+            asyncio.create_task(TicketService._generate_initial_summary(str(ticket.id)))
+        except Exception as e:
+            print(f"Failed to start summary generation for ticket {ticket.id}: {e}")
+            # Don't fail ticket creation if summary generation fails
+            pass
         
         return await TicketService._build_ticket_response(ticket)
+
+    @staticmethod
+    async def _generate_initial_summary(ticket_id: str):
+        """Generate initial AI summary for a new ticket (background task)"""
+        try:
+            from src.services.ai_service import AIService
+            print(f"Starting background summary generation for ticket {ticket_id}")
+            summary_response = await AIService.get_ticket_summary(ticket_id)
+            print(f"Successfully generated summary for ticket {ticket_id}")
+        except Exception as e:
+            print(f"Background summary generation failed for ticket {ticket_id}: {e}")
+            # This is a background task - log but don't raise
     @staticmethod
     async def get_all_tickets(current_user: User, filters: dict = None) -> List[TicketResponse]:
         """Get tickets based on user role and permissions"""

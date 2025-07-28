@@ -58,6 +58,10 @@ class TicketResponse(BaseModel):
     created_at: datetime = Field(alias="createdAt")
     updated_at: datetime = Field(alias="updatedAt")
     closed_at: Optional[datetime] = Field(None, alias="closedAt")
+    
+    # ENHANCEMENT L1 AI TICKET SUMMARY - Include AI summary in response
+    ai_summary: Optional[str] = Field(None, description="AI-generated summary of the ticket")
+    summary_generated_at: Optional[datetime] = Field(None, description="When the AI summary was generated")
 
     class Config:
         populate_by_name = True
