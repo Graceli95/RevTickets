@@ -1,6 +1,7 @@
 'use client';
 
 import { useEditor, EditorContent } from '@tiptap/react';
+import { useEffect, useMemo } from 'react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -34,7 +35,7 @@ export function RichTextEditor({
   className = '',
 }: RichTextEditorProps) {
   // Convert content to proper format for editor
-  const getEditorContent = () => {
+  const editorContent = useMemo(() => {
     if (!content) return '';
     
     // If it's already a RichTextContent object, use the JSON
@@ -44,7 +45,8 @@ export function RichTextEditor({
     
     // If it's a string, treat as legacy HTML
     return content as string;
-  };
+  }, [content]);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -58,7 +60,7 @@ export function RichTextEditor({
         placeholder,
       }),
     ],
-    content: getEditorContent(),
+    content: editorContent,
     editable,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
@@ -77,6 +79,20 @@ export function RichTextEditor({
       }
     },
   });
+
+  // Update editor content when content prop changes
+  useEffect(() => {
+    if (editor && !editor.isDestroyed) {
+      // Only update if the content is actually different to avoid unnecessary re-renders
+      if (editor.getHTML() !== (typeof editorContent === 'string' ? editorContent : '')) {
+        if (typeof editorContent === 'object') {
+          editor.commands.setContent(editorContent);
+        } else {
+          editor.commands.setContent(editorContent || '');
+        }
+      }
+    }
+  }, [editorContent, editor]);
 
   if (!editor) {
     return null;

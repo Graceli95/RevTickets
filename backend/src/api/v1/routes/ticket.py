@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from typing import List
 from beanie import PydanticObjectId
-from datetime import datetime, timezone
 from src.models.user import User
 from src.models.enums import TicketStatus
 from src.schemas.ticket import TicketCreate, TicketUpdate, TicketResponse
@@ -25,11 +24,38 @@ class CloseTicketRequest(BaseModel):
 
 @router.post("/", response_model=TicketResponse)
 async def create_ticket(ticket_data: TicketCreate, current_user: User = Depends(get_current_user)):
-    return await TicketService.create_ticket(ticket_data, current_user)
+    print(f"POST /tickets - Creating ticket for user: {current_user.email}")
+    print(f"POST /tickets - Ticket data: {ticket_data}")
+    try:
+        result = await TicketService.create_ticket(ticket_data, current_user)
+        print(f"POST /tickets - Successfully created ticket with ID: {result.id}")
+        return result
+    except Exception as e:
+        print(f"POST /tickets - Error creating ticket: {e}")
+        raise
 
 @router.get("/", response_model=List[TicketResponse])
-async def get_all_tickets(current_user: User = Depends(get_current_user)):
-    return await TicketService.get_all_tickets(current_user)
+async def get_all_tickets(
+    status: str = None,
+    priority: str = None,
+    severity: str = None,
+    current_user: User = Depends(get_current_user)
+):
+    print(f"GET /tickets - Fetching tickets for user: {current_user.email} (role: {current_user.role})")
+    print(f"GET /tickets - Filters: status={status}, priority={priority}, severity={severity}")
+    
+    # Build filters dict
+    filters = {}
+    if status:
+        filters['status'] = status
+    if priority:
+        filters['priority'] = priority
+    if severity:
+        filters['severity'] = severity
+    
+    tickets = await TicketService.get_all_tickets(current_user, filters)
+    print(f"GET /tickets - Returning {len(tickets)} tickets for {current_user.email}")
+    return tickets
 
 @router.get("/stats")
 async def get_ticket_stats(current_user: User = Depends(get_current_user)):
@@ -114,17 +140,9 @@ async def get_ticket_comments(ticket_id: PydanticObjectId):
     return await CommentService.get_comments_by_ticket(str(ticket_id))
 
 @router.post("/{ticket_id}/comments", response_model=CommentResponse)
-async def create_ticket_comment(ticket_id: PydanticObjectId, comment_data: dict, current_user: User = Depends(get_current_user)):
+async def create_ticket_comment(ticket_id: PydanticObjectId, comment_data: CommentCreate, current_user: User = Depends(get_current_user)):
     """Create a new comment for a specific ticket"""
-    # Build the comment create object with ticket and user context
-    comment_create = CommentCreate(
-        content=comment_data["content"],
-        ticketId=ticket_id,
-        userId=current_user.id,
-        createdAt=datetime.now(timezone.utc),
-        updatedAt=datetime.now(timezone.utc)
-    )
-    return await CommentService.create_comment(comment_create)
+    return await CommentService.create_comment(comment_data, ticket_id, current_user)
 
 
 

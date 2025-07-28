@@ -12,11 +12,11 @@ class TicketPriority(str, Enum):
     low = "low"
     medium = "medium"
     high = "high"
+    critical = "critical"
 
 class TicketSeverity(str, Enum):
-    info = "info"
     low = "low"
-    moderate = "moderate"
+    medium = "medium"
     high = "high"
     critical = "critical"
 

@@ -1,30 +1,35 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 from beanie import PydanticObjectId
 from src.models.rich_text import RichTextContent
 
 class UserInfo(BaseModel):
-    id: PydanticObjectId
+    id: str
     email: str
     name: Optional[str] = None
+    role: str  # "user" or "agent" to clearly show user type
 class CommentBase(BaseModel):
     content: RichTextContent
-    userId: PydanticObjectId  # ID of the user who made the comment
-    ticketId: PydanticObjectId  # ID of the ticket the comment is associated with
-    createdAt: datetime
-    updatedAt: datetime
+    user_id: PydanticObjectId = Field(..., alias="userId")  # ID of the user who made the comment
+    ticket_id: PydanticObjectId = Field(..., alias="ticketId")  # ID of the ticket the comment is associated with
+    created_at: datetime = Field(..., alias="createdAt")
+    updated_at: datetime = Field(..., alias="updatedAt")
 
-class CommentCreate(CommentBase):
-    pass    
+class CommentCreate(BaseModel):
+    content: RichTextContent
+    # For create, we don't need all the base fields since they'll be set by the service
+    
+    class Config:
+        populate_by_name = True    
 
 class CommentResponse(BaseModel):
     id: str  # ID of the comment
     content: RichTextContent
-    ticketId: str  # ID of the associated ticket
+    ticket_id: str = Field(..., alias="ticketId")  # ID of the associated ticket
     user: UserInfo  # User information
-    createdAt: datetime
-    updatedAt: datetime
+    created_at: datetime = Field(..., alias="createdAt")
+    updated_at: datetime = Field(..., alias="updatedAt")
 
     class Config:
         populate_by_name = True

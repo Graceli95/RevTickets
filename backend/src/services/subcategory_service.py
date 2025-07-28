@@ -6,6 +6,9 @@ class SubCategoryService:
     @staticmethod
     async def create_subcategory(subcategory_data: SubCategoryCreate) -> SubCategoryResponse:
         category = await Category.get(subcategory_data.category_id)
+        if not category:
+            raise ValueError("Invalid category ID")
+            
         subcategory = SubCategory(
             name=subcategory_data.name,
             description=subcategory_data.description,
@@ -14,7 +17,15 @@ class SubCategoryService:
         subcategory = await subcategory.insert()
         subcategory_dict = subcategory.model_dump()
         subcategory_dict["id"] = str(subcategory.id)
-        subcategory_dict["category"]["id"] = str(subcategory.category.id)
+        
+        # Handle the category field properly - consistent with other methods
+        if category:
+            subcategory_dict["category"] = {
+                "id": str(category.id),
+                "name": category.name,
+                "description": category.description
+            }
+        
         return SubCategoryResponse(**subcategory_dict)
 
     @staticmethod
@@ -76,6 +87,26 @@ class SubCategoryService:
         subcategory = await subcategory.save()
         subcategory_dict = subcategory.model_dump()
         subcategory_dict["id"] = str(subcategory.id)
+        
+        # Handle the category field properly
+        if subcategory.category:
+            # Check if it's a Link object (has .ref) or a full Category object
+            if hasattr(subcategory.category, 'ref') and subcategory.category.ref:
+                # It's a Link object, need to fetch
+                category = await Category.get(subcategory.category.ref.id)
+                if category:
+                    subcategory_dict["category"] = {
+                        "id": str(category.id),
+                        "name": category.name,
+                        "description": category.description
+                    }
+            else:
+                # It's already a full Category object
+                subcategory_dict["category"] = {
+                    "id": str(subcategory.category.id),
+                    "name": subcategory.category.name,
+                    "description": subcategory.category.description
+                }
 
         return SubCategoryResponse(**subcategory_dict)
 

@@ -41,10 +41,6 @@ export function SubCategoriesList() {
     }
   };
 
-  const getCategoryName = (categoryId: string) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category?.name || 'Unknown Category';
-  };
 
   const handleCreate = () => {
     setEditingSubCategory(null);

@@ -1,4 +1,6 @@
 // Ticket-related types matching backend API
+import { Category } from './category';
+import { SubCategory } from './subcategory';
 
 export type TicketStatus = 'new' | 'in_progress' | 'waiting_for_customer' | 'waiting_for_agent' | 'resolved' | 'closed';
 export type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
@@ -13,20 +15,27 @@ export interface RichTextContent {
 
 export interface Ticket {
   id: string;
-  category_id: string;
-  sub_category_id: string;
-  user_id: string;
-  agent_id?: string;
   title: string;
   description: string;
   content: RichTextContent;
-  tag_ids?: { [key: string]: string }[];
+  category: Category;
+  subCategory: SubCategory;
+  userInfo: UserInfo;
+  agentInfo?: UserInfo;
+  tagIds?: Array<{ key: string; value: string }>;
   status: TicketStatus;
   priority: TicketPriority;
   severity: TicketSeverity;
-  created_at: string;
-  updated_at: string;
-  closed_at?: string;
+  createdAt: string;
+  updatedAt: string;
+  closedAt?: string;
+}
+
+export interface UserInfo {
+  id: string;
+  email: string;
+  name?: string;
+  role?: string; // "user" or "agent" - helps identify user type in comments and tickets
 }
 
 export interface CreateTicketRequest {
@@ -76,7 +85,7 @@ export interface TicketStats {
 export interface Comment {
   id: string;
   ticket_id: string;
-  user_id: string;
+  user: UserInfo;
   content: RichTextContent;
   created_at: string;
   updated_at: string;

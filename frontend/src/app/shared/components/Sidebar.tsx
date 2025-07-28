@@ -4,17 +4,16 @@ import React from 'react';
 import { 
   LayoutDashboard, 
   Ticket, 
-  FolderOpen, 
-  BookOpen,
-  Settings,
-  Users,
-  BarChart3,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  BookOpen,
+  Tags,
+  User
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from 'flowbite-react';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface SidebarProps {
   isCollapsed?: boolean;
@@ -23,8 +22,11 @@ interface SidebarProps {
 
 export function Sidebar({ isCollapsed = false, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
 
-  const sidebarItems = [
+  // Build sidebar items based on user role
+  const sidebarItems = user?.role === 'agent' ? [
+    // Agent navigation: Dashboard, My Tickets, Categories, Knowledge Base, Profile
     {
       href: '/',
       icon: LayoutDashboard,
@@ -33,11 +35,11 @@ export function Sidebar({ isCollapsed = false, onToggleCollapse }: SidebarProps)
     {
       href: '/tickets',
       icon: Ticket,
-      label: 'Tickets',
+      label: 'My Tickets',
     },
     {
       href: '/categories',
-      icon: FolderOpen,
+      icon: Tags,
       label: 'Categories',
     },
     {
@@ -46,19 +48,21 @@ export function Sidebar({ isCollapsed = false, onToggleCollapse }: SidebarProps)
       label: 'Knowledge Base',
     },
     {
-      href: '/users',
-      icon: Users,
-      label: 'Users',
+      href: '/profile',
+      icon: User,
+      label: 'Profile',
+    },
+  ] : [
+    // Regular user navigation: My Tickets and Knowledge Base
+    {
+      href: '/tickets',
+      icon: Ticket,
+      label: 'My Tickets',
     },
     {
-      href: '/analytics',
-      icon: BarChart3,
-      label: 'Analytics',
-    },
-    {
-      href: '/settings',
-      icon: Settings,
-      label: 'Settings',
+      href: '/knowledge-base',
+      icon: BookOpen,
+      label: 'Knowledge Base',
     },
   ];
 

@@ -3,57 +3,79 @@ from typing import List, Optional
 from src.models.comment import Comment
 from src.models.ticket import Ticket
 from src.models.user import User
+from src.models.enums import TicketStatus
 from src.schemas.comment import CommentCreate, CommentResponse, CommentUpdate, UserInfo
 from datetime import datetime, timezone
 
 class CommentService:
     @staticmethod
     async def _to_comment_response(comment: Comment) -> CommentResponse:
-        comment_dict = comment.model_dump()
-        comment_dict["id"] = str(comment.id)
-        ticket = await comment.ticket.fetch()
-        comment_dict["ticketId"] = str(ticket.id) if ticket else None
-        user = await comment.user.fetch() if hasattr(comment, "user") else None
+        # Handle ticket Link
+        if hasattr(comment.ticket, 'fetch'):
+            ticket = await comment.ticket.fetch()
+        else:
+            ticket = comment.ticket
+        
+        # Handle user_id Link properly and include role information
+        user = None
+        if hasattr(comment.user_id, 'fetch'):
+            user = await comment.user_id.fetch()
+        else:
+            user = comment.user_id
+            
+        user_info = None
         if user:
-            comment_dict["user"] = UserInfo(
+            user_info = UserInfo(
                 id=str(user.id),
                 email=user.email,
-                name=(user.first_name + " " + user.last_name)
+                name=(user.first_name + " " + user.last_name) if user.first_name and user.last_name else user.email,
+                role=user.role  # Include role to show if user is agent or regular user
             )
-        return CommentResponse(**comment_dict)
+        
+        # Build response directly like TicketResponse does, passing content object directly
+        return CommentResponse(
+            id=str(comment.id),
+            content=comment.content,  # Pass RichTextContent object directly
+            ticket_id=str(ticket.id) if ticket else None,
+            user=user_info,
+            created_at=comment.created_at,
+            updated_at=comment.updated_at
+        )
 
     @staticmethod
-    async def create_comment(comment_data: CommentCreate) -> CommentResponse:
-        ticket = await Ticket.get(PydanticObjectId(comment_data.ticketId))
-        user = await User.get(PydanticObjectId(comment_data.userId))
-
+    async def create_comment(comment_data: CommentCreate, ticket_id: PydanticObjectId, current_user: User) -> CommentResponse:
+        # Get the ticket
+        ticket = await Ticket.get(ticket_id)
         if not ticket:
             raise ValueError("Invalid ticket ID")
 
+        # Check if we need to update ticket status
+        # If a regular user (non-agent) responds to a ticket that's waiting for customer response,
+        # change status to waiting_for_agent
+        if (current_user.role == "user" and 
+            ticket.status == TicketStatus.waiting_for_customer):
+            print(f"User {current_user.email} responding to ticket {ticket_id}, changing status from waiting_for_customer to waiting_for_agent")
+            ticket.status = TicketStatus.waiting_for_agent
+            ticket.updated_at = datetime.now(timezone.utc)
+            await ticket.save()
+
+        # Create comment with automatically set fields
         comment = Comment(
             content=comment_data.content,
-            user=user,
+            user_id=current_user,  # Use current_user directly
             ticket=ticket,
-            createdAt=comment_data.createdAt,
-            updatedAt=comment_data.updatedAt
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
-        user_info = UserInfo(id=str(user.id), email=user.email, name=(user.first_name + " " + user.last_name)) if user else None
+        
         comment = await comment.insert()
-        comment_dict = comment.model_dump()
-        comment_dict["user"] = user_info
-        comment_dict["id"] = str(comment.id)
-        comment_dict["ticketId"] = str(ticket.id)
-        return CommentResponse(**comment_dict)
+        return await CommentService._to_comment_response(comment)
 
     @staticmethod
     async def get_comment(comment_id: str) -> Optional[CommentResponse]:
         comment = await Comment.get(PydanticObjectId(comment_id))
         if comment:
-            comment_dict = comment.model_dump()
-            comment_dict["id"] = str(comment.id)
-            ticket = await comment.ticket.fetch()
-            comment_dict["ticketId"] = str(ticket.id) if ticket else None
-            return CommentResponse(**comment_dict)
+            return await CommentService._to_comment_response(comment)
         return None
 
     @staticmethod
@@ -64,26 +86,40 @@ class CommentService:
 
     @staticmethod
     async def get_comments_by_user(user_id: str) -> List[CommentResponse]:
-        comments = await Comment.find(Comment.userId == user_id).to_list()
+        # Get all comments and filter in Python to handle Link objects
+        all_comments = await Comment.find_all().to_list()
         result = []
-        for c in comments:
-            comment_dict = c.model_dump()
-            comment_dict["id"] = str(c.id)
-            ticket = await c.ticket.fetch()
-            comment_dict["ticketId"] = str(ticket.id) if ticket else None
-            result.append(CommentResponse(**comment_dict))
+        
+        for comment in all_comments:
+            # Check if this comment belongs to the user
+            comment_user_id = None
+            if hasattr(comment.user_id, 'id'):
+                comment_user_id = str(comment.user_id.id)
+            elif hasattr(comment.user_id, 'ref') and comment.user_id.ref:
+                comment_user_id = str(comment.user_id.ref.id)
+            
+            if comment_user_id == user_id:
+                result.append(await CommentService._to_comment_response(comment))
+        
         return result
 
     @staticmethod
     async def get_comments_by_ticket(ticket_id: str) -> List[CommentResponse]:
-        comments = await Comment.find(Comment.ticket.id == PydanticObjectId(ticket_id)).to_list()
+        # Get all comments and filter in Python to handle Link objects
+        all_comments = await Comment.find_all().to_list()
         result = []
-        for c in comments:
-            comment_dict = c.model_dump()
-            comment_dict["id"] = str(c.id)
-            ticket = await c.ticket.fetch()
-            comment_dict["ticketId"] = str(ticket.id) if ticket else None            
-            result.append(CommentResponse(**comment_dict))
+        
+        for comment in all_comments:
+            # Check if this comment belongs to the ticket
+            comment_ticket_id = None
+            if hasattr(comment.ticket, 'id'):
+                comment_ticket_id = str(comment.ticket.id)
+            elif hasattr(comment.ticket, 'ref') and comment.ticket.ref:
+                comment_ticket_id = str(comment.ticket.ref.id)
+            
+            if comment_ticket_id == ticket_id:
+                result.append(await CommentService._to_comment_response(comment))
+        
         return result
     
 
@@ -96,13 +132,9 @@ class CommentService:
         
         # Update fields
         comment.content = comment_data.content or comment.content
-        comment.updatedAt = datetime.now(timezone.utc)
+        comment.updated_at = datetime.now(timezone.utc)
         
         # Save changes
         comment = await comment.save()
-        comment_dict = comment.model_dump()
-        comment_dict["id"] = str(comment.id)
-        ticket = await comment.ticket.fetch()
-        comment_dict["ticketId"] = str(ticket.id) if ticket else None
-        return CommentResponse(**comment_dict)
+        return await CommentService._to_comment_response(comment)
     

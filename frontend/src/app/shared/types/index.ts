@@ -3,7 +3,7 @@ export * from './ticket';
 export * from './user';
 export * from './category';
 export * from './subcategory';
-export * from './document';
+export * from './article';
 export * from './api';
 
 // Legacy exports for backward compatibility (these should be updated over time)

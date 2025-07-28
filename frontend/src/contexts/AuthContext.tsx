@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import type { User } from '../app/shared/types';
 import { apiClient } from '../lib/api/client';
+import { API_BASE_URL } from '../constants';
 
 interface AuthState {
   user: User | null;
@@ -107,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       formData.append('password', password);
 
       // Login API call
-      const loginResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/login`, {
+      const loginResponse = await fetch(`${API_BASE_URL}/users/login`, {
         method: 'POST',
         body: formData,
       });

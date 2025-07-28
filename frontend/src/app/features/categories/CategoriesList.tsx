@@ -35,9 +35,12 @@ export function CategoriesList() {
       setCategories(categoriesData);
       
       // Fetch subcategory counts for all categories
+      console.log('Fetching subcategories for all categories:', categoriesData);
       const subcategoryPromises = categoriesData.map(async (category) => {
         try {
+          console.log(`Fetching subcategories for category: ${category.name} (${category.id})`);
           const subCategoriesData = await subCategoriesApi.getByCategoryId(category.id);
+          console.log(`Received ${subCategoriesData.length} subcategories for ${category.name}:`, subCategoriesData);
           return subCategoriesData;
         } catch (error) {
           console.error(`Failed to fetch subcategories for ${category.name}:`, error);
@@ -46,6 +49,7 @@ export function CategoriesList() {
       });
       
       const allSubCategories = (await Promise.all(subcategoryPromises)).flat();
+      console.log('All subcategories loaded:', allSubCategories);
       setSubCategories(allSubCategories);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
@@ -63,11 +67,15 @@ export function CategoriesList() {
       newExpanded.add(categoryId);
       // Fetch subcategories for this category if not already loaded
       try {
+        console.log('Fetching subcategories for category:', categoryId);
         const subCategoriesData = await subCategoriesApi.getByCategoryId(categoryId);
+        console.log('Received subcategories data:', subCategoriesData);
         setSubCategories(prev => {
           // Remove old subcategories for this category and add new ones
           const filtered = prev.filter(sub => sub.category?.id !== categoryId);
-          return [...filtered, ...subCategoriesData];
+          const newSubCategories = [...filtered, ...subCategoriesData];
+          console.log('Updated subcategories state:', newSubCategories);
+          return newSubCategories;
         });
       } catch (error) {
         console.error('Failed to fetch subcategories:', error);

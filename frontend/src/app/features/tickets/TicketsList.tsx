@@ -4,33 +4,34 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button, Card, Table, TableHead, TableHeadCell, TableRow, TableCell, TableBody, Pagination } from 'flowbite-react';
 import { Plus, Search, Filter, ChevronUp, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ticketsApi } from '../../../lib/api';
 import { formatFullDateTime } from '../../../lib/utils';
 import { Badge } from '../../shared/components/ui';
 import { LoadingSpinner } from '../../shared/components';
-import { TicketViewModal } from './TicketViewModal';
 import type { Ticket } from '../../shared/types';
 import { getRichTextDisplay } from '../../../lib/utils';
+import { useAuth } from '../../../contexts/AuthContext';
 
-type SortField = 'title' | 'status' | 'priority' | 'created_at' | 'updated_at';
+type SortField = 'title' | 'status' | 'priority' | 'createdAt' | 'updatedAt';
 type SortDirection = 'asc' | 'desc';
 
 export function TicketsList() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   
   // Sorting state
-  const [sortField, setSortField] = useState<SortField>('updated_at');
+  const [sortField, setSortField] = useState<SortField>('updatedAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const fetchTickets = useCallback(async () => {
@@ -74,7 +75,7 @@ export function TicketsList() {
       let bValue: string | number = b[sortField as keyof typeof b] as string | number;
 
       // Handle date fields
-      if (sortField === 'created_at' || sortField === 'updated_at') {
+      if (sortField === 'createdAt' || sortField === 'updatedAt') {
         aValue = new Date(aValue).getTime();
         bValue = new Date(bValue).getTime();
       }
@@ -160,13 +161,7 @@ export function TicketsList() {
   };
 
   const handleTicketClick = (ticketId: string) => {
-    setSelectedTicketId(ticketId);
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedTicketId(null);
+    router.push(`/tickets/${ticketId}`);
   };
 
   if (loading) {
@@ -229,12 +224,14 @@ export function TicketsList() {
             <option value="critical">Critical</option>
           </select>
 
-          <Link href="/tickets/create">
-            <Button className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500">
-              <Plus className="h-4 w-4 mr-2" />
-              New Ticket
-            </Button>
-          </Link>
+          {user?.role !== 'agent' && (
+            <Link href="/tickets/create">
+              <Button className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500">
+                <Plus className="h-4 w-4 mr-2" />
+                New Ticket
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -249,7 +246,7 @@ export function TicketsList() {
                 {searchQuery ? 'Try adjusting your search or filters' : 'Create your first ticket to get started'}
               </p>
             </div>
-            {!searchQuery && (
+            {!searchQuery && user?.role !== 'agent' && (
               <Link href="/tickets/create">
                 <Button className="mt-4 bg-orange-600 hover:bg-orange-700 focus:ring-orange-500">
                   <Plus className="h-4 w-4 mr-2" />
@@ -281,31 +278,26 @@ export function TicketsList() {
                       {getSortIcon('status')}
                     </button>
                   </TableHeadCell>
+                  <TableHeadCell>Priority & Severity</TableHeadCell>
                   <TableHeadCell>
-                    <button
-                      onClick={() => handleSort('priority')}
-                      className="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400"
-                    >
-                      <span>Priority</span>
-                      {getSortIcon('priority')}
-                    </button>
+                    {user?.role === 'agent' ? 'Created By' : 'Assigned Agent'}
                   </TableHeadCell>
                   <TableHeadCell>
                     <button
-                      onClick={() => handleSort('created_at')}
+                      onClick={() => handleSort('createdAt')}
                       className="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400"
                     >
                       <span>Created</span>
-                      {getSortIcon('created_at')}
+                      {getSortIcon('createdAt')}
                     </button>
                   </TableHeadCell>
                   <TableHeadCell>
                     <button
-                      onClick={() => handleSort('updated_at')}
+                      onClick={() => handleSort('updatedAt')}
                       className="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400"
                     >
                       <span>Updated</span>
-                      {getSortIcon('updated_at')}
+                      {getSortIcon('updatedAt')}
                     </button>
                   </TableHeadCell>
                   <TableHeadCell>
@@ -330,22 +322,99 @@ export function TicketsList() {
                         <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                           #{ticket.id}
                         </div>
+                        {/* Tags */}
+                        {ticket.tagIds && ticket.tagIds.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {ticket.tagIds.slice(0, 2).map((tag, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium bg-orange-50 text-orange-600 rounded border border-orange-200 dark:bg-orange-900/10 dark:text-orange-400 dark:border-orange-800"
+                              >
+                                <span className="opacity-50 mr-0.5">{tag.key}:</span>
+                                {tag.value}
+                              </span>
+                            ))}
+                            {ticket.tagIds.length > 2 && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium bg-gray-50 text-gray-500 rounded border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700">
+                                +{ticket.tagIds.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="status" value={ticket.status} />
                     </TableCell>
                     <TableCell>
-                      <Badge variant="priority" value={ticket.priority} />
+                      <div className="space-y-1">
+                        <Badge variant="priority" value={ticket.priority} showLabel />
+                        <Badge variant="severity" value={ticket.severity} showLabel />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {user?.role === 'agent' ? (
+                        // Agent view: show who created the ticket
+                        ticket.userInfo ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-shrink-0">
+                              <div className="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center">
+                                <span className="text-xs font-medium text-white">
+                                  {ticket.userInfo.name ? 
+                                    ticket.userInfo.name.split(' ').map(n => n[0]).join('').toUpperCase() :
+                                    ticket.userInfo.email[0].toUpperCase()
+                                  }
+                                </span>
+                              </div>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                {ticket.userInfo.name || ticket.userInfo.email}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                User
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400 italic">Unknown User</span>
+                        )
+                      ) : (
+                        // User view: show assigned agent
+                        ticket.agentInfo ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-shrink-0">
+                              <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+                                <span className="text-xs font-medium text-white">
+                                  {ticket.agentInfo.name ? 
+                                    ticket.agentInfo.name.split(' ').map(n => n[0]).join('').toUpperCase() :
+                                    ticket.agentInfo.email[0].toUpperCase()
+                                  }
+                                </span>
+                              </div>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                {ticket.agentInfo.name || ticket.agentInfo.email}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                Agent
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400 italic">Unassigned</span>
+                        )
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-gray-500 dark:text-gray-400">
                       <div className="whitespace-nowrap">
-                        {formatFullDateTime(ticket.created_at)}
+                        {formatFullDateTime(ticket.createdAt)}
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-gray-500 dark:text-gray-400">
                       <div className="whitespace-nowrap">
-                        {formatFullDateTime(ticket.updated_at)}
+                        {formatFullDateTime(ticket.updatedAt)}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -427,12 +496,6 @@ export function TicketsList() {
         </div>
       )}
 
-      {/* Ticket View Modal */}
-      <TicketViewModal
-        ticketId={selectedTicketId}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-      />
     </div>
   );
 }

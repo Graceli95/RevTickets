@@ -8,11 +8,17 @@ router = APIRouter(prefix="/subcategories", tags=["SubCategories"], dependencies
 
 @router.get("/", response_model=List[SubCategoryResponse])
 async def get_all_subcategories():
-    return await SubCategoryService.get_all_subcategories()
+    print("GET /subcategories - Fetching all subcategories")
+    subcategories = await SubCategoryService.get_all_subcategories()
+    print(f"GET /subcategories - Returning {len(subcategories)} subcategories")
+    return subcategories
 
 @router.post("/", response_model=SubCategoryResponse)
 async def create_subcategory(subcategory: SubCategoryCreate):
-    return await SubCategoryService.create_subcategory(subcategory)
+    print(f"POST /subcategories - Creating subcategory: {subcategory.name} for category: {subcategory.category_id}")
+    result = await SubCategoryService.create_subcategory(subcategory)
+    print(f"POST /subcategories - Created subcategory with ID: {result.id}")
+    return result
 
 @router.get("/{subcategory_id}", response_model=SubCategoryResponse)
 async def get_subcategory(subcategory_id: str):

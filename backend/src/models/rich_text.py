@@ -5,12 +5,14 @@ class RichTextContent(BaseModel):
     """Rich text content with multiple formats for flexibility and compatibility"""
     
     html: str = Field(..., description="HTML representation of the content for display")
-    json_content: Dict[str, Any] = Field(..., alias="json", description="TipTap JSON representation for editor compatibility")
+    json_content: Dict[str, Any] = Field(default_factory=dict, alias="json", description="TipTap JSON representation for editor compatibility")
     text: str = Field(..., description="Plain text representation for search and indexing")
     
     class Config:
         # Allow the model to be used in MongoDB documents
         arbitrary_types_allowed = True
+        # Allow population by field name (json_content) or alias (json)
+        populate_by_name = True
         # JSON schema extra info - using v2 naming
         json_schema_extra = {
             "example": {

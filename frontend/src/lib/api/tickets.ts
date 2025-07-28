@@ -63,6 +63,27 @@ export const ticketsApi = {
     return apiClient.get(API_ENDPOINTS.TICKETS.SEARCH, { params });
   },
 
+  // Agent-specific endpoints
+  async getQueue(): Promise<Ticket[]> {
+    return apiClient.get('/tickets/queue');
+  },
+
+  async getAssigned(): Promise<Ticket[]> {
+    return apiClient.get('/tickets/assigned');
+  },
+
+  async assignTicket(ticketId: string, agentId: string): Promise<Ticket> {
+    return apiClient.post(`/tickets/${ticketId}/assign`, { agent_id: agentId });
+  },
+
+  async autoAssignTicket(ticketId: string): Promise<Ticket> {
+    return apiClient.post(`/tickets/${ticketId}/auto-assign`);
+  },
+
+  async updateStatus(ticketId: string, status: string): Promise<Ticket> {
+    return apiClient.patch(`/tickets/${ticketId}/status`, { status });
+  },
+
   async getComments(ticketId: string): Promise<Comment[]> {
     return apiClient.get(API_ENDPOINTS.TICKETS.COMMENTS(ticketId));
   },

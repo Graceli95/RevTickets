@@ -15,16 +15,11 @@ frontend/
 ├── src/
 │   ├── app/                       # Application layer
 │   │   ├── features/              # Feature-based modules
-│   │   │   ├── auth/              # Authentication feature
 │   │   │   ├── tickets/           # Ticket management
 │   │   │   ├── categories/        # Category management
-│   │   │   ├── knowledge-base/    # Knowledge base
-│   │   │   ├── dashboard/         # Dashboard components
-│   │   │   │   ├── index.ts       # Feature exports
-│   │   │   │   └── StatsCard.tsx  # Dashboard components
-│   │   │   ├── users/             # User management
-│   │   │   ├── analytics/         # Analytics and reports
-│   │   │   └── settings/          # Application settings
+│   │   │   └── dashboard/         # Dashboard components
+│   │   │       ├── index.ts       # Feature exports
+│   │   │       └── StatsCard.tsx  # Dashboard components
 │   │   │
 │   │   └── shared/                # Shared application code
 │   │       ├── components/        # Reusable UI components
@@ -41,11 +36,8 @@ frontend/
 │   │       ├── hooks/             # Custom React hooks
 │   │       │   └── useLocalStorage.ts # localStorage hook
 │   │       │
-│   │       ├── types/             # TypeScript type definitions
-│   │       │   └── index.ts       # All shared types
-│   │       │
-│   │       └── utils/             # Shared utilities
-│   │           └── index.ts       # Utility exports
+│   │       └── types/             # TypeScript type definitions
+│   │           └── index.ts       # All shared types
 │   │
 │   ├── constants/                 # Application constants
 │   │   ├── api.ts                 # API endpoints
@@ -63,19 +55,14 @@ frontend/
 │   │   │   ├── client.ts          # HTTP client setup
 │   │   │   ├── tickets.ts         # Ticket API calls
 │   │   │   ├── categories.ts      # Category API calls
-│   │   │   ├── documents.ts       # Document API calls
+│   │   │   ├── articles.ts        # Knowledge base API calls
 │   │   │   └── index.ts           # API exports
 │   │   │
-│   │   ├── utils/                 # Core utilities
-│   │   │   ├── date.ts            # Date formatting utilities
-│   │   │   ├── formatting.ts      # Display formatting
-│   │   │   ├── common.ts          # Common utilities
-│   │   │   └── index.ts           # Utility exports
-│   │   │
-│   │   └── validations/           # Schema validations (future)
-│   │
-│   └── store/                     # State management (future)
-│       └── index.ts               # Store configuration
+│   │   └── utils/                 # Core utilities
+│   │       ├── date.ts            # Date formatting utilities
+│   │       ├── formatting.ts      # Display formatting
+│   │       ├── common.ts          # Common utilities
+│   │       └── index.ts           # Utility exports
 │
 ├── public/                        # Static assets
 │   └── favicon.ico                # App icon

@@ -30,7 +30,11 @@ export const subCategoriesApi = {
   },
 
   async getByCategoryId(categoryId: string): Promise<SubCategory[]> {
-    return apiClient.get(API_ENDPOINTS.CATEGORIES.SUBCATEGORIES(categoryId));
+    const endpoint = API_ENDPOINTS.CATEGORIES.SUBCATEGORIES(categoryId);
+    console.log('Fetching subcategories from endpoint:', endpoint);
+    const result = await apiClient.get<SubCategory[]>(endpoint);
+    console.log('API response for subcategories:', result);
+    return result;
   },
 
   async getById(id: string): Promise<SubCategory> {

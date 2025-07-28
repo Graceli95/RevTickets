@@ -57,7 +57,26 @@ class CategoryService:
         return response
     @staticmethod
     async def get_subcategories_by_category(category_id: str) -> List[SubCategoryResponse]:
-        subcategories = await SubCategory.find(SubCategory.category.id == category_id).to_list()
+        from beanie import PydanticObjectId
+        try:
+            # Convert string ID to PydanticObjectId for proper query
+            object_id = PydanticObjectId(category_id)
+            print(f"Searching for subcategories with category ID: {category_id} -> {object_id}")
+            
+            # Try different query approaches
+            subcategories = await SubCategory.find({"category.$id": object_id}).to_list()
+            print(f"Found {len(subcategories)} subcategories for category {category_id}")
+        except Exception as e:
+            print(f"Error finding subcategories for category {category_id}: {e}")
+            # Try alternative query syntax
+            try:
+                subcategories = await SubCategory.find_all().to_list()
+                # Filter manually as backup
+                subcategories = [sub for sub in subcategories if sub.category and sub.category.ref and str(sub.category.ref.id) == category_id]
+                print(f"Found {len(subcategories)} subcategories for category {category_id} using manual filter")
+            except Exception as e2:
+                print(f"Error with backup query: {e2}")
+                return []
         response = []
         for sub in subcategories:
             sub_dict = sub.model_dump()

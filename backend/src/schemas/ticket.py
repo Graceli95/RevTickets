@@ -29,14 +29,14 @@ class TicketBase(BaseModel):
     severity: TicketSeverity
 
 class TicketCreate(BaseModel):
-    category_id: PydanticObjectId
-    sub_category_id: PydanticObjectId
+    category_id: str  # Will be converted to PydanticObjectId in service
+    sub_category_id: str  # Will be converted to PydanticObjectId in service
     title: str
     description: str
     content: RichTextContent
     priority: TicketPriority = TicketPriority.medium
     severity: TicketSeverity = TicketSeverity.low
-    tag_ids: Optional[List[Dict[str, str]]] = []
+    tag_ids: Optional[List[Dict[str, str]]] = Field(default_factory=list)
 
 class TicketUpdate(TicketBase):
     tagIds: Optional[List[str]]
@@ -47,17 +47,17 @@ class TicketResponse(BaseModel):
     description: str
     content: RichTextContent
     category: CategoryResponse
-    subCategory: SubCategoryResponse
-    userInfo: UserInfo  # or UserResponse
-    agentInfo: Optional[UserInfo] = None  # or Optional[UserResponse]
-    tagData: Optional[List[TagData]] = []
+    sub_category: SubCategoryResponse = Field(..., alias="subCategory")
+    user_info: UserInfo = Field(..., alias="userInfo")  # or UserResponse
+    agent_info: Optional[UserInfo] = Field(None, alias="agentInfo")  # or Optional[UserResponse]
+    tag_ids: Optional[List[TagData]] = Field(default_factory=list, alias="tagIds")
     status: TicketStatus
     priority: TicketPriority
     severity: TicketSeverity
 
-    createdAt: datetime
-    updatedAt: datetime
-    closedAt: Optional[datetime]
+    created_at: datetime = Field(alias="createdAt")
+    updated_at: datetime = Field(alias="updatedAt")
+    closed_at: Optional[datetime] = Field(None, alias="closedAt")
 
     class Config:
         populate_by_name = True

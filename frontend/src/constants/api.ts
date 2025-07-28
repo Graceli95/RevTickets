@@ -1,4 +1,4 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 export const API_ENDPOINTS = {
   // Auth
@@ -52,16 +52,10 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `/comments/${id}`,
   },
   
-  // Documents
-  DOCUMENTS: {
-    BASE: '/documents',
-    BY_ID: (id: string) => `/documents/${id}`,
-    SEARCH: '/documents/search',
-  },
-  
-  // Suggested Responses
-  SUGGESTED_RESPONSES: {
-    BASE: '/suggested-responses',
-    BY_ID: (id: string) => `/suggested-responses/${id}`,
+  // Articles (Knowledge Base)
+  ARTICLES: {
+    BASE: '/articles',
+    BY_ID: (id: string) => `/articles/${id}`,
+    SEARCH: '/articles/search',
   },
 } as const;
