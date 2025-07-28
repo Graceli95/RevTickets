@@ -4,6 +4,7 @@ from .ticket_service import TicketService
 from .comment_service import CommentService
 from src.schemas.summary import TicketSummaryResponse
 from src.schemas.closing_comments import ClosingComments
+from fastapi import HTTPException
 
 class AIService:
     @staticmethod
@@ -22,8 +23,8 @@ class AIService:
             "description": ticket.description,
             "category": ticket.category.name if ticket.category else "Uncategorized",
             "subcategory": ticket.subCategory.name if ticket.subCategory else "None",
-            "tags": [{"key": tag.key, "value": tag.value } for tag in ticket.tagData] if ticket.tagData else [],
-            "comments": [c.content for c in comments],
+            "tags": [f"{tag_dict.get('key', '')}: {tag_dict.get('value', '')}" for tag_dict in (ticket.tag_ids or [])],
+            "comments": [c.content.text for c in comments],
         }
 
         # Send to LangChain summary function
@@ -44,8 +45,8 @@ class AIService:
             "description": ticket.description,
             "category": ticket.category.name if ticket.category else "Uncategorized",
             "subcategory": ticket.subCategory.name if ticket.subCategory else "None",
-            "tags": [{"key": tag.key, "value": tag.value } for tag in ticket.tagData] if ticket.tagData else [],
-            "comments": [c.content for c in comments],
+            "tags": [f"{tag_dict.get('key', '')}: {tag_dict.get('value', '')}" for tag_dict in (ticket.tag_ids or [])],
+            "comments": [c.content.text for c in comments],
         }
 
         comment = await generate_closing_comments(data)
