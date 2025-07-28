@@ -3,14 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Breadcrumb, BreadcrumbItem, Button, Avatar, Textarea } from 'flowbite-react';
-import { ArrowLeft, MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Tag as TagIcon } from 'lucide-react';
+import { ArrowLeft, MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Tag as TagIcon, Brain, Sparkles } from 'lucide-react';
 import { MainLayout, ProtectedRoute } from '../../../src/app/shared/components';
 import { Badge, LoadingSpinner } from '../../../src/app/shared/components';
 import { RichTextEditor } from '../../../src/app/shared/components/RichTextEditor';
 import { ticketsApi } from '../../../src/lib/api';
 import { formatFullDateTime } from '../../../src/lib/utils';
 import { useAuth } from '../../../src/contexts/AuthContext';
-import type { Ticket, Comment, CreateComment, RichTextContent, TicketStatus } from '../../../src/app/shared/types';
+import type { Ticket, Comment, CreateComment, RichTextContent, TicketStatus, ClosingCommentsResponse } from '../../../src/app/shared/types';
 import { createEmptyRichText, convertLegacyContent } from '../../../src/lib/utils';
 
 export default function TicketDetailPage() {
@@ -29,6 +29,11 @@ export default function TicketDetailPage() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [showCloseForm, setShowCloseForm] = useState(false);
   const [closingComment, setClosingComment] = useState('');
+
+  // ENHANCEMENT L1 AI CLOSING SUGGESTIONS - AI closing suggestions state
+  const [closingSuggestions, setClosingSuggestions] = useState<ClosingCommentsResponse | null>(null);
+  const [generatingClosingSuggestions, setGeneratingClosingSuggestions] = useState(false);
+  const [showAISuggestions, setShowAISuggestions] = useState(false);
 
   const fetchTicketData = useCallback(async () => {
     if (!ticketId) return;
@@ -141,6 +146,28 @@ export default function TicketDetailPage() {
 
   // Check if current user can modify this ticket (agent assigned to it)
   const canModifyTicket = user?.role === 'agent' && ticket?.agentInfo?.id === user.id;
+
+  // ENHANCEMENT L1 AI CLOSING SUGGESTIONS - Generate closing suggestions function
+  const handleGenerateClosingSuggestions = async () => {
+    if (!ticketId) return;
+
+    try {
+      setGeneratingClosingSuggestions(true);
+      const response = await ticketsApi.generateClosingComments(ticketId);
+      setClosingSuggestions(response);
+      setShowAISuggestions(true);
+    } catch (error) {
+      console.error('Failed to generate closing suggestions:', error);
+    } finally {
+      setGeneratingClosingSuggestions(false);
+    }
+  };
+
+  // ENHANCEMENT L1 AI CLOSING SUGGESTIONS - Apply AI suggestion to closing comment
+  const handleApplyAISuggestion = (comment: string) => {
+    setClosingComment(comment);
+    setShowAISuggestions(false);
+  };
   
 
   const handleBack = () => {
@@ -338,6 +365,74 @@ export default function TicketDetailPage() {
                     {/* Close Ticket Form */}
                     {showCloseForm && (
                       <div className="mt-4 border-t border-blue-200 dark:border-blue-700 pt-4">
+                        {/* ENHANCEMENT L1 AI CLOSING SUGGESTIONS - AI Suggestions Section */}
+                        <div className="mb-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                              AI Closing Suggestions
+                            </label>
+                            <Button
+                              size="xs"
+                              className="bg-purple-600 hover:bg-purple-700 focus:ring-purple-500"
+                              onClick={handleGenerateClosingSuggestions}
+                              disabled={generatingClosingSuggestions}
+                            >
+                              <Brain className="h-3 w-3 mr-1" />
+                              {generatingClosingSuggestions ? 'Generating...' : 'Get AI Suggestions'}
+                            </Button>
+                          </div>
+
+                          {/* Loading state */}
+                          {generatingClosingSuggestions && (
+                            <div className="flex items-center justify-center py-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg mb-3">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+                              <span className="ml-2 text-sm text-purple-700 dark:text-purple-300">
+                                AI is analyzing the ticket for closing suggestions...
+                              </span>
+                            </div>
+                          )}
+
+                          {/* AI Suggestions Display */}
+                          {showAISuggestions && closingSuggestions && !generatingClosingSuggestions && (
+                            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-3">
+                              <div className="flex items-center mb-3">
+                                <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
+                                <h5 className="text-sm font-medium text-purple-900 dark:text-purple-200">
+                                  AI-Generated Closing Suggestion
+                                </h5>
+                              </div>
+                              
+                              <div className="mb-3">
+                                <p className="text-xs text-purple-700 dark:text-purple-300 mb-1">
+                                  <strong>Reason:</strong> {closingSuggestions.reason}
+                                </p>
+                                <div className="bg-white dark:bg-gray-800 rounded p-3 border border-purple-200 dark:border-purple-700">
+                                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                    {closingSuggestions.comment}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex space-x-2">
+                                <Button
+                                  size="xs"
+                                  className="bg-green-600 hover:bg-green-700 focus:ring-green-500"
+                                  onClick={() => handleApplyAISuggestion(closingSuggestions.comment)}
+                                >
+                                  Use This Comment
+                                </Button>
+                                <Button
+                                  size="xs"
+                                  color="gray"
+                                  onClick={() => setShowAISuggestions(false)}
+                                >
+                                  Dismiss
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Closing Comment <span className="text-red-500">*</span>
                         </label>
@@ -345,7 +440,7 @@ export default function TicketDetailPage() {
                           value={closingComment}
                           onChange={(e) => setClosingComment(e.target.value)}
                           placeholder="Describe how the issue was resolved..."
-                          rows={3}
+                          rows={4}
                           className="w-full mb-3"
                           required
                         />
@@ -364,6 +459,8 @@ export default function TicketDetailPage() {
                             onClick={() => {
                               setShowCloseForm(false);
                               setClosingComment('');
+                              setShowAISuggestions(false);
+                              setClosingSuggestions(null);
                             }}
                             disabled={updatingStatus}
                           >

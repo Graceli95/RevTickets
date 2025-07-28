@@ -110,3 +110,9 @@ export interface TicketAssignment {
 export interface TicketClosure {
   resolution: string;
 }
+
+// ENHANCEMENT L1 AI CLOSING SUGGESTIONS - AI closing suggestion types
+export interface ClosingCommentsResponse {
+  reason: string;
+  comment: string;
+}

@@ -9,7 +9,8 @@ import type {
   TicketStats,
   Comment,
   CreateComment,
-  UpdateComment
+  UpdateComment,
+  ClosingCommentsResponse
 } from '../../app/shared/types';
 
 export const ticketsApi = {
@@ -98,5 +99,10 @@ export const ticketsApi = {
 
   async deleteComment(id: string): Promise<void> {
     return apiClient.delete(API_ENDPOINTS.COMMENTS.BY_ID(id));
+  },
+
+  // ENHANCEMENT L1 AI CLOSING SUGGESTIONS - AI functionality
+  async generateClosingComments(ticketId: string): Promise<ClosingCommentsResponse> {
+    return apiClient.get(API_ENDPOINTS.TICKETS.CLOSING_COMMENTS(ticketId));
   },
 };
