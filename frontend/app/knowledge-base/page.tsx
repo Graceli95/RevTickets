@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Button, Card, Table, TableHead, TableHeadCell, TableRow, TableCell, TableBody } from 'flowbite-react';
-import { Plus, Search, BookOpen, Calendar } from 'lucide-react';
+import { Plus, Search, BookOpen, Calendar } from 'lucide-react'; // Search icon is part of enhancement-l1-kb-title-search
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { MainLayout, ProtectedRoute } from '../../src/app/shared/components';
@@ -18,6 +18,10 @@ export default function KnowledgeBasePage() {
   const { user } = useAuth();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // ===== ENHANCEMENT L1 KB TITLE SEARCH - START =====
+  // This search functionality is part of enhancement-l1-kb-title-search
+  // Remove this state for the base version
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchArticles = useCallback(async () => {
@@ -40,6 +44,10 @@ export default function KnowledgeBasePage() {
     router.push(`/knowledge-base/${articleId}`);
   };
 
+  // ===== ENHANCEMENT L1 KB TITLE SEARCH - FILTERING LOGIC =====
+  // This client-side filtering is part of enhancement-l1-kb-title-search
+  // Remove this entire filteredArticles logic for the base version
+  // Base version should just use: const filteredArticles = articles;
   const filteredArticles = articles.filter(article => {
     if (!searchQuery.trim()) return true;
     
@@ -51,6 +59,7 @@ export default function KnowledgeBasePage() {
       article.subCategory?.name?.toLowerCase().includes(query)
     );
   });
+  // ===== ENHANCEMENT L1 KB TITLE SEARCH - END =====
 
   if (loading) {
     return (
@@ -85,7 +94,9 @@ export default function KnowledgeBasePage() {
             </div>
           </div>
 
-          {/* Search */}
+          {/* ===== ENHANCEMENT L1 KB TITLE SEARCH - SEARCH UI ===== */}
+          {/* This entire search section is part of enhancement-l1-kb-title-search */}
+          {/* Remove this entire div for the base version */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="relative flex-1 max-w-md">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -100,6 +111,7 @@ export default function KnowledgeBasePage() {
               />
             </div>
           </div>
+          {/* ===== ENHANCEMENT L1 KB TITLE SEARCH - END ===== */}
 
           {/* Articles Table */}
           <Card>
@@ -108,13 +120,19 @@ export default function KnowledgeBasePage() {
                 <div className="text-gray-500 dark:text-gray-400">
                   <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <h3 className="text-lg font-medium mb-2">
+                    {/* ===== ENHANCEMENT L1 KB TITLE SEARCH - CONDITIONAL TEXT ===== */}
+                    {/* For base version, just use: 'No articles yet' */}
                     {searchQuery ? 'No articles found' : 'No articles yet'}
                   </h3>
                   <p className="text-sm">
+                    {/* ===== ENHANCEMENT L1 KB TITLE SEARCH - CONDITIONAL TEXT ===== */}
+                    {/* For base version, just use: 'Articles will appear here once they are created' */}
                     {searchQuery 
                       ? 'Try adjusting your search terms' 
                       : 'Articles will appear here once they are created'}
                   </p>
+                  {/* ===== ENHANCEMENT L1 KB TITLE SEARCH - CONDITIONAL BUTTON ===== */}
+                  {/* For base version, remove the !searchQuery condition, just use: user?.role === 'agent' */}
                   {!searchQuery && user?.role === 'agent' && (
                     <Link href="/knowledge-base/create">
                       <Button className="mt-4 bg-orange-600 hover:bg-orange-700 focus:ring-orange-500">
@@ -201,13 +219,16 @@ export default function KnowledgeBasePage() {
             )}
           </Card>
 
-          {/* Results Summary */}
+          {/* ===== ENHANCEMENT L1 KB TITLE SEARCH - RESULTS SUMMARY ===== */}
+          {/* This entire results summary section is part of enhancement-l1-kb-title-search */}
+          {/* Remove this entire section for the base version */}
           {filteredArticles.length > 0 && (
             <div className="text-sm text-gray-500 dark:text-gray-400">
               Showing {filteredArticles.length} of {articles.length} article{articles.length !== 1 ? 's' : ''}
               {searchQuery && ` matching "${searchQuery}"`}
             </div>
           )}
+          {/* ===== ENHANCEMENT L1 KB TITLE SEARCH - END ===== */}
         </div>
       </MainLayout>
     </ProtectedRoute>
