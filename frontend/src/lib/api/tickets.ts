@@ -99,4 +99,13 @@ export const ticketsApi = {
   async deleteComment(id: string): Promise<void> {
     return apiClient.delete(API_ENDPOINTS.COMMENTS.BY_ID(id));
   },
+
+  // ENHANCEMENT L1 TICKET REOPENING - Reopen ticket functionality
+  async canReopen(ticketId: string): Promise<{ canReopen: boolean; reason?: string }> {
+    return apiClient.get(API_ENDPOINTS.TICKETS.CAN_REOPEN(ticketId));
+  },
+
+  async reopenTicket(ticketId: string): Promise<Ticket> {
+    return apiClient.post(API_ENDPOINTS.TICKETS.REOPEN(ticketId));
+  },
 };

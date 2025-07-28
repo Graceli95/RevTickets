@@ -3,12 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Breadcrumb, BreadcrumbItem, Button, Avatar, Textarea } from 'flowbite-react';
-import { ArrowLeft, MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Tag as TagIcon } from 'lucide-react';
+import { ArrowLeft, MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Tag as TagIcon, RotateCcw } from 'lucide-react';
 import { MainLayout, ProtectedRoute } from '../../../src/app/shared/components';
 import { Badge, LoadingSpinner } from '../../../src/app/shared/components';
 import { RichTextEditor } from '../../../src/app/shared/components/RichTextEditor';
 import { ticketsApi } from '../../../src/lib/api';
-import { formatFullDateTime } from '../../../src/lib/utils';
+import { formatFullDateTime, canReopenTicket, getReopenTimeRemaining } from '../../../src/lib/utils';
 import { useAuth } from '../../../src/contexts/AuthContext';
 import type { Ticket, Comment, CreateComment, RichTextContent, TicketStatus } from '../../../src/app/shared/types';
 import { createEmptyRichText, convertLegacyContent } from '../../../src/lib/utils';
@@ -29,6 +29,10 @@ export default function TicketDetailPage() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [showCloseForm, setShowCloseForm] = useState(false);
   const [closingComment, setClosingComment] = useState('');
+
+  // ENHANCEMENT L1 TICKET REOPENING - Reopen state management
+  const [showReopenConfirm, setShowReopenConfirm] = useState(false);
+  const [reopeningTicket, setReopeningTicket] = useState(false);
 
   const fetchTicketData = useCallback(async () => {
     if (!ticketId) return;
@@ -141,6 +145,24 @@ export default function TicketDetailPage() {
 
   // Check if current user can modify this ticket (agent assigned to it)
   const canModifyTicket = user?.role === 'agent' && ticket?.agentInfo?.id === user.id;
+
+  // ENHANCEMENT L1 TICKET REOPENING - Reopen ticket functionality
+  const handleReopenTicket = async () => {
+    if (!ticketId || !ticket) return;
+
+    try {
+      setReopeningTicket(true);
+      await ticketsApi.reopenTicket(ticketId);
+      
+      // Update local ticket state
+      setTicket({ ...ticket, status: 'new' });
+      setShowReopenConfirm(false);
+    } catch (error) {
+      console.error('Failed to reopen ticket:', error);
+    } finally {
+      setReopeningTicket(false);
+    }
+  };
   
 
   const handleBack = () => {
@@ -234,6 +256,33 @@ export default function TicketDetailPage() {
                   <Badge variant="priority" value={ticket.priority} showLabel />
                   <Badge variant="severity" value={ticket.severity} showLabel />
                 </div>
+
+                {/* ENHANCEMENT L1 TICKET REOPENING - Reopen ticket section */}
+                {user?.role === 'user' && ticket.userInfo?.id === user.id && 
+                 (ticket.status === 'closed' || ticket.status === 'resolved') && 
+                 ticket.closedAt && canReopenTicket(ticket.closedAt) && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-1">
+                          Ticket can be reopened
+                        </h4>
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          {getReopenTimeRemaining(ticket.closedAt)}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500"
+                        onClick={() => setShowReopenConfirm(true)}
+                        disabled={reopeningTicket}
+                      >
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Reopen Ticket
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Tags Section */}
                 {ticket.tagIds && ticket.tagIds.length > 0 && (
@@ -533,6 +582,66 @@ export default function TicketDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* ENHANCEMENT L1 TICKET REOPENING - Reopen confirmation modal */}
+        {showReopenConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center">
+                  <RotateCcw className="h-5 w-5 mr-2 text-orange-600" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Reopen Ticket
+                  </h3>
+                </div>
+                <Button
+                  color="gray"
+                  className="p-1"
+                  onClick={() => setShowReopenConfirm(false)}
+                >
+                  <XCircle className="h-5 w-5" />
+                </Button>
+              </div>
+              
+              {/* Body */}
+              <div className="p-6 space-y-4">
+                <p className="text-gray-700 dark:text-gray-300">
+                  Are you sure you want to reopen this ticket? This will change the status to &quot;New&quot; and the ticket will be available for agent assignment again.
+                </p>
+                {ticket?.closedAt && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      <strong>Time remaining:</strong> {getReopenTimeRemaining(ticket.closedAt)}
+                    </p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      After this period expires, the ticket cannot be reopened.
+                    </p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Footer */}
+              <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
+                <Button
+                  color="gray"
+                  onClick={() => setShowReopenConfirm(false)}
+                  disabled={reopeningTicket}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500"
+                  onClick={handleReopenTicket}
+                  disabled={reopeningTicket}
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  {reopeningTicket ? 'Reopening...' : 'Reopen Ticket'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </MainLayout>
     </ProtectedRoute>
   );
