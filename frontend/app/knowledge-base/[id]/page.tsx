@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button, Card, Breadcrumb, BreadcrumbItem } from 'flowbite-react';
+import { Button, Breadcrumb, BreadcrumbItem } from 'flowbite-react';
+import Link from 'next/link';
 import { ArrowLeft, Calendar, BookOpen, Tag } from 'lucide-react';
 import { MainLayout, ProtectedRoute } from '../../../src/app/shared/components';
 import { LoadingSpinner } from '../../../src/app/shared/components';
@@ -10,7 +11,6 @@ import { articlesApi } from '../../../src/lib/api';
 import { formatFullDateTime } from '../../../src/lib/utils';
 import { useAuth } from '../../../src/contexts/AuthContext';
 import type { Article } from '../../../src/app/shared/types';
-import { getRichTextHTML } from '../../../src/lib/utils';
 
 export default function ArticleDetailPage() {
   const params = useParams();
@@ -81,71 +81,66 @@ export default function ArticleDetailPage() {
   return (
     <ProtectedRoute>
       <MainLayout>
-        <div className="space-y-6">
+        <div className="container mx-auto px-4 py-8 space-y-6">
           {/* Breadcrumbs */}
           <Breadcrumb className="mb-4">
-            <BreadcrumbItem href="/knowledge-base">
-              <BookOpen className="h-4 w-4 mr-2" />
-              Knowledge Base
+            <BreadcrumbItem>
+              <Link href="/knowledge-base" className="flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Knowledge Base
+              </Link>
             </BreadcrumbItem>
             <BreadcrumbItem>{article.title}</BreadcrumbItem>
           </Breadcrumb>
 
-          {/* Header */}
-          <div className="flex items-start justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={handleBack}
-                color="gray"
-                className="flex items-center"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-            </div>
-          </div>
 
-          {/* Article Content */}
-          <Card className="max-w-4xl">
-            <div className="space-y-6">
-              {/* Article Header */}
-              <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          {/* Article Layout */}
+          <div className="max-w-4xl mx-auto">
+            {/* Article Header */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-6">
+              <div className="text-center mb-8">
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
                   {article.title}
                 </h1>
-
+                
                 {/* Article Meta */}
-                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-600 dark:text-gray-400">
                   <div className="flex items-center space-x-2">
                     <Tag className="h-4 w-4" />
                     <span className="font-medium">{article.category?.name}</span>
-                    <span>•</span>
+                    <span className="text-gray-400">→</span>
                     <span>{article.subCategory?.name}</span>
                   </div>
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4" />
-                    <span>Created {formatFullDateTime(article.createdAt)}</span>
+                    <span>Published {formatFullDateTime(article.createdAt)}</span>
                   </div>
                   {article.updatedAt !== article.createdAt && (
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4" />
                       <span>Updated {formatFullDateTime(article.updatedAt)}</span>
                     </div>
                   )}
                 </div>
               </div>
+            </div>
 
-              {/* Article Content */}
-              <div className="prose prose-gray dark:prose-invert max-w-none">
-                <div 
-                  dangerouslySetInnerHTML={{ 
-                    __html: getRichTextHTML(article.content) 
-                  }}
-                  className="min-h-[200px] text-gray-900 dark:text-gray-100"
-                />
+            {/* Article Content */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="p-8">
+                <div className="prose prose-lg prose-gray dark:prose-invert max-w-none">
+                  <div 
+                    className="text-base leading-relaxed"
+                    dangerouslySetInnerHTML={{ 
+                      __html: typeof article.content === 'string' 
+                        ? article.content 
+                        : article.content?.html || '' 
+                    }}
+                  />
+                </div>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
       </MainLayout>
     </ProtectedRoute>

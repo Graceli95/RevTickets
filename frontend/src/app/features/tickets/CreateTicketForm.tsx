@@ -6,7 +6,7 @@ import { Button, Card, Label, TextInput, Textarea, Select } from 'flowbite-react
 import { Save, X, AlertCircle, Tag as TagIcon, Plus } from 'lucide-react';
 import { ticketsApi, categoriesApi, subCategoriesApi, tagsApi } from '../../../lib/api';
 import { RichTextEditor } from '../../shared/components';
-import type { Category, SubCategory, Tag, CreateTicketRequest, TicketPriority, TicketSeverity, RichTextContent } from '../../shared/types';
+import type { Category, SubCategory, Tag, CreateTicketRequest, TicketPriority, RichTextContent } from '../../shared/types';
 import { createEmptyRichText, isRichTextEmpty } from '../../../lib/utils';
 
 export function CreateTicketForm() {
@@ -26,7 +26,6 @@ export function CreateTicketForm() {
     categoryId: '',
     subCategoryId: '',
     priority: 'medium' as TicketPriority,
-    severity: 'medium' as TicketSeverity,
   });
 
   useEffect(() => {
@@ -140,7 +139,6 @@ export function CreateTicketForm() {
         description: formData.description,
         content: formData.content,
         priority: formData.priority,
-        severity: formData.severity,
         tag_ids: selectedTags.map(tag => ({ [tag.key]: tag.value })),
       };
 
@@ -280,22 +278,6 @@ export function CreateTicketForm() {
             </p>
           </div>
 
-          <div>
-            <Label htmlFor="severity" className="mb-2 block">Severity</Label>
-            <Select
-              id="severity"
-              value={formData.severity}
-              onChange={(e) => handleInputChange('severity', e.target.value as TicketSeverity)}
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="critical">Critical</option>
-            </Select>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              How severely does this issue impact your work?
-            </p>
-          </div>
         </div>
 
         {/* Tags Selection */}
