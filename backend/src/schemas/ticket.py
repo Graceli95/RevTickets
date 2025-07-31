@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
 from datetime import datetime
-from src.models.enums import TicketStatus, TicketPriority, TicketSeverity
+from src.models.enums import TicketStatus, TicketPriority
 from src.schemas.category import CategoryResponse
 from src.schemas.subcategory import SubCategoryResponse
 from src.models.rich_text import RichTextContent
@@ -26,7 +26,6 @@ class TicketBase(BaseModel):
     content: RichTextContent
     status: TicketStatus
     priority: TicketPriority
-    severity: TicketSeverity
 
 class TicketCreate(BaseModel):
     category_id: str  # Will be converted to PydanticObjectId in service
@@ -35,7 +34,6 @@ class TicketCreate(BaseModel):
     description: str
     content: RichTextContent
     priority: TicketPriority = TicketPriority.medium
-    severity: TicketSeverity = TicketSeverity.low
     tag_ids: Optional[List[Dict[str, str]]] = Field(default_factory=list)
 
 class TicketUpdate(TicketBase):
@@ -53,7 +51,6 @@ class TicketResponse(BaseModel):
     tag_ids: Optional[List[TagData]] = Field(default_factory=list, alias="tagIds")
     status: TicketStatus
     priority: TicketPriority
-    severity: TicketSeverity
 
     created_at: datetime = Field(alias="createdAt")
     updated_at: datetime = Field(alias="updatedAt")

@@ -4,7 +4,7 @@ from typing import Optional, List, Dict
 from datetime import datetime, timezone
 from .category import Category
 from .subcategory import SubCategory
-from .enums import TicketStatus, TicketPriority, TicketSeverity
+from .enums import TicketStatus, TicketPriority
 from .user import User
 from .rich_text import RichTextContent
 class Ticket(Document):
@@ -20,8 +20,7 @@ class Ticket(Document):
     tag_ids: Optional[List[Dict[str, str]]] = Field(default_factory=list, description="List of tag IDs associated with the ticket", alias="tagIds")
 
     status: TicketStatus = Field(default=TicketStatus.new, description="Status of the ticket") 
-    priority: TicketPriority = Field(default=TicketPriority.medium, description="Priority: low, medium, high")
-    severity: TicketSeverity = Field(default=TicketSeverity.low, description="Severity of the issue")
+    priority: TicketPriority = Field(default=TicketPriority.medium, description="Priority: low, medium, high, critical")
 
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), alias="createdAt")
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), alias="updatedAt")

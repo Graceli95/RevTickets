@@ -97,7 +97,6 @@ class TicketService:
             description=ticket.description,
             content=ticket.content,
             priority=ticket.priority,
-            severity=ticket.severity,
             created_at=ticket.created_at,
             updated_at=ticket.updated_at,
             closed_at=ticket.closed_at,
@@ -144,7 +143,6 @@ class TicketService:
             content=data.content,
             status=TicketStatus.new,
             priority=data.priority,
-            severity=data.severity,
             tag_ids=tag_ids
         )
         
@@ -313,9 +311,6 @@ class TicketService:
                 if 'priority' in filters and ticket.priority != filters['priority']:
                     include_ticket = False
                 
-                # Apply severity filter
-                if 'severity' in filters and ticket.severity != filters['severity']:
-                    include_ticket = False
                 
                 if include_ticket:
                     filtered_tickets.append(ticket)
@@ -693,12 +688,6 @@ class TicketService:
                 "high": 0,
                 "critical": 0
             },
-            "by_severity": {
-                "low": 0,
-                "medium": 0,
-                "high": 0,
-                "critical": 0
-            }
         }
 
         for ticket in tickets:
@@ -719,8 +708,6 @@ class TicketService:
             # Count by priority
             stats["by_priority"][ticket.priority.value] += 1
             
-            # Count by severity  
-            stats["by_severity"][ticket.severity.value] += 1
 
         return stats
 

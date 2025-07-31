@@ -4,7 +4,6 @@ import { SubCategory } from './subcategory';
 
 export type TicketStatus = 'new' | 'in_progress' | 'waiting_for_customer' | 'waiting_for_agent' | 'resolved' | 'closed';
 export type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
-export type TicketSeverity = 'low' | 'medium' | 'high' | 'critical';
 
 // Rich text content structure
 export interface RichTextContent {
@@ -25,7 +24,6 @@ export interface Ticket {
   tagIds?: Array<{ key: string; value: string }>;
   status: TicketStatus;
   priority: TicketPriority;
-  severity: TicketSeverity;
   createdAt: string;
   updatedAt: string;
   closedAt?: string;
@@ -48,7 +46,6 @@ export interface CreateTicketRequest {
   description: string;
   content: RichTextContent;
   priority?: TicketPriority;
-  severity?: TicketSeverity;
   tag_ids?: { [key: string]: string }[];
 }
 
@@ -58,7 +55,6 @@ export interface UpdateTicketRequest {
   content?: RichTextContent;
   status?: TicketStatus;
   priority?: TicketPriority;
-  severity?: TicketSeverity;
   agent_id?: string;
   tag_ids?: { [key: string]: string }[];
 }
@@ -72,12 +68,6 @@ export interface TicketStats {
   resolved: number;
   closed: number;
   by_priority: {
-    low: number;
-    medium: number;
-    high: number;
-    critical: number;
-  };
-  by_severity: {
     low: number;
     medium: number;
     high: number;

@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ticketsApi } from '../../../lib/api';
 import { formatFullDateTime } from '../../../lib/utils';
-import { Badge } from '../../shared/components/ui';
 import { LoadingSpinner } from '../../shared/components';
 import type { Ticket } from '../../shared/types';
 import { getRichTextDisplay } from '../../../lib/utils';
@@ -170,6 +169,7 @@ export function TicketsList() {
 
   return (
     <div className="space-y-6">
+
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex flex-1 items-center space-x-4">
@@ -181,7 +181,7 @@ export function TicketsList() {
             <input
               type="text"
               placeholder="Search tickets..."
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+              className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white transition-colors"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -190,18 +190,22 @@ export function TicketsList() {
           
           <Button
             onClick={handleSearch}
-            className="bg-orange-600 px-4 hover:bg-orange-700 focus:ring-orange-500 text-white"
+            className="bg-orange-600 px-4 hover:bg-orange-700 focus:ring-orange-500 text-white transition-colors"
           >
             <Search className="h-4 w-4" />
           </Button>
         </div>
 
-        {/* Filters */}
+        {/* Advanced Filters */}
         <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+            <Filter className="h-4 w-4" />
+            <span>Filter:</span>
+          </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors"
           >
             <option value="all">All Status</option>
             <option value="new">New</option>
@@ -215,7 +219,7 @@ export function TicketsList() {
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors"
           >
             <option value="all">All Priority</option>
             <option value="low">Low</option>
@@ -226,7 +230,7 @@ export function TicketsList() {
 
           {user?.role !== 'agent' && (
             <Link href="/tickets/create">
-              <Button className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500">
+              <Button className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500 transition-colors">
                 <Plus className="h-4 w-4 mr-2" />
                 New Ticket
               </Button>
@@ -278,7 +282,7 @@ export function TicketsList() {
                       {getSortIcon('status')}
                     </button>
                   </TableHeadCell>
-                  <TableHeadCell>Priority & Severity</TableHeadCell>
+                  <TableHeadCell>Priority</TableHeadCell>
                   <TableHeadCell>
                     {user?.role === 'agent' ? 'Created By' : 'Assigned Agent'}
                   </TableHeadCell>
@@ -305,20 +309,18 @@ export function TicketsList() {
                   </TableHeadCell>
                 </TableRow>
               </TableHead>
-              <TableBody className="divide-y">
+              <TableBody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {tickets.map((ticket) => (
                   <TableRow
                     key={ticket.id}
-                    className="bg-white dark:border-gray-700 dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    className="bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer group"
+                    onClick={() => handleTicketClick(ticket.id)}
                   >
-                    <TableCell className="whitespace-nowrap font-medium text-gray-900 dark:text-white">
+                    <TableCell className="whitespace-nowrap font-medium text-gray-900 dark:text-white py-4">
                       <div>
-                        <button
-                          onClick={() => handleTicketClick(ticket.id)}
-                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-left"
-                        >
-                          <div className="font-medium">{ticket.title}</div>
-                        </button>
+                        <div className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          {ticket.title}
+                        </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                           #{ticket.id}
                         </div>
@@ -343,16 +345,52 @@ export function TicketsList() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant="status" value={ticket.status} />
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <Badge variant="priority" value={ticket.priority} showLabel />
-                        <Badge variant="severity" value={ticket.severity} showLabel />
+                    <TableCell className="py-4">
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                          ticket.status === 'new' ? 'bg-blue-500' :
+                          ticket.status === 'in_progress' ? 'bg-yellow-500' :
+                          ticket.status === 'waiting_for_customer' ? 'bg-orange-500' :
+                          ticket.status === 'waiting_for_agent' ? 'bg-purple-500' :
+                          ticket.status === 'resolved' ? 'bg-green-500' :
+                          ticket.status === 'closed' ? 'bg-gray-500' : 'bg-gray-400'
+                        }`}></div>
+                        <span className={`text-sm font-medium whitespace-nowrap ${
+                          ticket.status === 'new' ? 'text-blue-700 dark:text-blue-300' :
+                          ticket.status === 'in_progress' ? 'text-yellow-700 dark:text-yellow-300' :
+                          ticket.status === 'waiting_for_customer' ? 'text-orange-700 dark:text-orange-300' :
+                          ticket.status === 'waiting_for_agent' ? 'text-purple-700 dark:text-purple-300' :
+                          ticket.status === 'resolved' ? 'text-green-700 dark:text-green-300' :
+                          ticket.status === 'closed' ? 'text-gray-700 dark:text-gray-300' : 'text-gray-600'
+                        }`}>
+                          {ticket.status === 'new' ? 'New' :
+                           ticket.status === 'in_progress' ? 'In Progress' :
+                           ticket.status === 'waiting_for_customer' ? 'Waiting for Customer' :
+                           ticket.status === 'waiting_for_agent' ? 'Waiting for Agent' :
+                           ticket.status === 'resolved' ? 'Resolved' :
+                           ticket.status === 'closed' ? 'Closed' : ticket.status}
+                        </span>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-4">
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                          ticket.priority === 'critical' ? 'bg-red-500' :
+                          ticket.priority === 'high' ? 'bg-orange-500' :
+                          ticket.priority === 'medium' ? 'bg-yellow-500' :
+                          ticket.priority === 'low' ? 'bg-green-500' : 'bg-gray-400'
+                        }`}></div>
+                        <span className={`text-sm font-medium ${
+                          ticket.priority === 'critical' ? 'text-red-700 dark:text-red-300' :
+                          ticket.priority === 'high' ? 'text-orange-700 dark:text-orange-300' :
+                          ticket.priority === 'medium' ? 'text-yellow-700 dark:text-yellow-300' :
+                          ticket.priority === 'low' ? 'text-green-700 dark:text-green-300' : 'text-gray-600'
+                        }`}>
+                          {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4">
                       {user?.role === 'agent' ? (
                         // Agent view: show who created the ticket
                         ticket.userInfo ? (
@@ -407,24 +445,29 @@ export function TicketsList() {
                         )
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-500 dark:text-gray-400">
+                    <TableCell className="text-sm text-gray-500 dark:text-gray-400 py-4">
                       <div className="whitespace-nowrap">
                         {formatFullDateTime(ticket.createdAt)}
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-500 dark:text-gray-400">
+                    <TableCell className="text-sm text-gray-500 dark:text-gray-400 py-4">
                       <div className="whitespace-nowrap">
                         {formatFullDateTime(ticket.updatedAt)}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Button
-                        size="xs"
-                        className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500 text-white"
-                        onClick={() => handleTicketClick(ticket.id)}
-                      >
-                        View
-                      </Button>
+                    <TableCell className="py-4">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                        <Button
+                          size="xs"
+                          className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500 text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTicketClick(ticket.id);
+                          }}
+                        >
+                          View
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -38,11 +38,10 @@ async def create_ticket(ticket_data: TicketCreate, current_user: User = Depends(
 async def get_all_tickets(
     status: str = None,
     priority: str = None,
-    severity: str = None,
     current_user: User = Depends(get_current_user)
 ):
     print(f"GET /tickets - Fetching tickets for user: {current_user.email} (role: {current_user.role})")
-    print(f"GET /tickets - Filters: status={status}, priority={priority}, severity={severity}")
+    print(f"GET /tickets - Filters: status={status}, priority={priority}")
     
     # Build filters dict
     filters = {}
@@ -50,8 +49,6 @@ async def get_all_tickets(
         filters['status'] = status
     if priority:
         filters['priority'] = priority
-    if severity:
-        filters['severity'] = severity
     
     tickets = await TicketService.get_all_tickets(current_user, filters)
     print(f"GET /tickets - Returning {len(tickets)} tickets for {current_user.email}")

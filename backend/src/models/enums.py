@@ -14,12 +14,6 @@ class TicketPriority(str, Enum):
     high = "high"
     critical = "critical"
 
-class TicketSeverity(str, Enum):
-    low = "low"
-    medium = "medium"
-    high = "high"
-    critical = "critical"
-
 class UserRole(str, Enum):
     user = "user"
     agent = "agent"

@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Breadcrumb, BreadcrumbItem, Button, Avatar, Textarea } from 'flowbite-react';
-import { ArrowLeft, MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Tag as TagIcon, Brain, Sparkles } from 'lucide-react';
+import { MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Tag as TagIcon, Brain, Sparkles } from 'lucide-react';
+import Link from 'next/link';
 import { MainLayout, ProtectedRoute } from '../../../src/app/shared/components';
-import { Badge, LoadingSpinner } from '../../../src/app/shared/components';
+import { LoadingSpinner } from '../../../src/app/shared/components';
 import { RichTextEditor } from '../../../src/app/shared/components/RichTextEditor';
 import { ticketsApi } from '../../../src/lib/api';
 import { formatFullDateTime } from '../../../src/lib/utils';
@@ -15,7 +16,6 @@ import { createEmptyRichText, convertLegacyContent } from '../../../src/lib/util
 
 export default function TicketDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const { user } = useAuth();
   const ticketId = params.id as string;
 
@@ -45,11 +45,6 @@ export default function TicketDetailPage() {
         ticketsApi.getById(ticketId),
         ticketsApi.getComments(ticketId),
       ]);
-      console.log('Ticket createdAt:', ticketData.createdAt);
-      console.log('Ticket updatedAt:', ticketData.updatedAt);
-      console.log('Current time:', new Date().toISOString());
-      console.log('Ticket tagIds:', ticketData.tagIds);
-      console.log('Full ticket data:', ticketData);
       setTicket(ticketData);
       setComments(commentsData);
       
@@ -173,9 +168,6 @@ export default function TicketDetailPage() {
   };
   
 
-  const handleBack = () => {
-    router.back();
-  };
 
   if (loading) {
     return (
@@ -199,13 +191,11 @@ export default function TicketDetailPage() {
                 <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-medium mb-2">Ticket not found</h3>
                 <p className="text-sm">The requested ticket could not be loaded.</p>
-                <Button 
-                  onClick={handleBack}
-                  className="mt-4 bg-orange-600 hover:bg-orange-700 focus:ring-orange-500"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Go Back
-                </Button>
+                <Link href="/tickets">
+                  <Button className="mt-4 bg-orange-600 hover:bg-orange-700 focus:ring-orange-500">
+                    Go Back
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
@@ -220,63 +210,193 @@ export default function TicketDetailPage() {
         <div className="container mx-auto px-4 py-6 max-w-6xl">
           {/* Breadcrumbs */}
           <Breadcrumb aria-label="Ticket breadcrumb" className="mb-6">
-            <BreadcrumbItem href="/" icon={Home}>
-              Home
-            </BreadcrumbItem>
-            <BreadcrumbItem href="/tickets">
-              {user?.role === 'agent' ? 'My Tickets' : 'My Tickets'}
+            <BreadcrumbItem>
+              <Link href="/" className="flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <Home className="h-4 w-4 mr-2" />
+                Home
+              </Link>
             </BreadcrumbItem>
             <BreadcrumbItem>
-              #{ticketId}
+              <Link href="/tickets" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                {user?.role === 'agent' ? 'Agent Dashboard' : 'My Tickets'}
+              </Link>
+            </BreadcrumbItem>
+            <BreadcrumbItem>
+              Ticket #{ticketId}
             </BreadcrumbItem>
           </Breadcrumb>
 
-          {/* Header with Back Button */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={handleBack}
-                color="gray"
-                className="flex items-center"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
+          {/* Page Header */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {ticket.title}
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Ticket #{ticketId}
-                </p>
+                <div className="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
+                  <span>#{ticketId}</span>
+                  <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                  <span>Created by {ticket.userInfo?.name || ticket.userInfo?.email}</span>
+                  {ticket.agentInfo && (
+                    <>
+                      <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                      <span>Assigned to {ticket.agentInfo.name || ticket.agentInfo.email}</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-3 space-y-6">
+              {/* Status Workflow */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 mb-6">
+                <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Ticket Progress
+                  </h3>
+                </div>
+                <div className="p-6">
+                  <div className="relative">
+                    {/* Progress Steps */}
+                    <div className="flex items-center justify-between relative mb-8">
+                      {[
+                        { status: 'new', label: 'New' },
+                        { status: 'in_progress', label: 'In Progress' },
+                        { status: 'waiting_for_customer', label: 'Awaiting Customer' },
+                        { status: 'waiting_for_agent', label: 'Awaiting Agent' },
+                        { status: 'resolved', label: 'Resolved' },
+                        { status: 'closed', label: 'Closed' }
+                      ].map((step, index, array) => {
+                        const currentIndex = array.findIndex(s => s.status === ticket.status);
+                        const isCompleted = index < currentIndex;
+                        const isCurrent = step.status === ticket.status;
+                        
+                        return (
+                          <div key={step.status} className="flex flex-col items-center relative z-10">
+                            {/* Step Circle */}
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                              isCompleted 
+                                ? 'bg-blue-600 border-blue-600 text-white' 
+                                : isCurrent
+                                ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200'
+                                : 'bg-white border-gray-300 text-gray-400 dark:bg-gray-800 dark:border-gray-600'
+                            }`}>
+                              {isCompleted ? (
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              ) : (
+                                <span className="text-xs font-bold">{index + 1}</span>
+                              )}
+                            </div>
+                            
+                            {/* Step Label */}
+                            <div className={`mt-2 text-xs font-medium text-center max-w-20 ${
+                              isCompleted || isCurrent 
+                                ? 'text-blue-600 dark:text-blue-400' 
+                                : 'text-gray-500 dark:text-gray-400'
+                            }`}>
+                              {step.label}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      
+                      {/* Progress Line */}
+                      <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-200 dark:bg-gray-700 -z-0">
+                        <div 
+                          className="h-full bg-blue-600 transition-all duration-500 ease-out"
+                          style={{
+                            width: `${(([
+                              'new', 'in_progress', 'waiting_for_customer', 'waiting_for_agent', 'resolved', 'closed'
+                            ].findIndex(s => s === ticket.status)) / 5) * 100}%`
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 text-center bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+                    <span className="font-medium">Current Status:</span>{' '}
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {ticket.status === 'new' ? 'New Ticket - Awaiting Assignment' :
+                       ticket.status === 'in_progress' ? 'In Progress - Being Worked On' :
+                       ticket.status === 'waiting_for_customer' ? 'Waiting for Your Response' :
+                       ticket.status === 'waiting_for_agent' ? 'Waiting for Agent Response' :
+                       ticket.status === 'resolved' ? 'Resolved - Ready for Review' :
+                       ticket.status === 'closed' ? 'Closed - Completed' : ticket.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Ticket Details Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                {/* Status and Priority Badges */}
-                <div className="flex flex-wrap gap-2 mb-6">
-                  <Badge variant="status" value={ticket.status} showLabel />
-                  <Badge variant="priority" value={ticket.priority} showLabel />
-                  <Badge variant="severity" value={ticket.severity} showLabel />
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                {/* Status and Priority Info */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">STATUS</div>
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-2 h-2 rounded-full ${
+                        ticket.status === 'new' ? 'bg-blue-500' :
+                        ticket.status === 'in_progress' ? 'bg-yellow-500' :
+                        ticket.status === 'waiting_for_customer' ? 'bg-orange-500' :
+                        ticket.status === 'waiting_for_agent' ? 'bg-purple-500' :
+                        ticket.status === 'resolved' ? 'bg-green-500' :
+                        ticket.status === 'closed' ? 'bg-gray-500' : 'bg-gray-400'
+                      }`}></div>
+                      <span className={`text-sm font-medium ${
+                        ticket.status === 'new' ? 'text-blue-700 dark:text-blue-300' :
+                        ticket.status === 'in_progress' ? 'text-yellow-700 dark:text-yellow-300' :
+                        ticket.status === 'waiting_for_customer' ? 'text-orange-700 dark:text-orange-300' :
+                        ticket.status === 'waiting_for_agent' ? 'text-purple-700 dark:text-purple-300' :
+                        ticket.status === 'resolved' ? 'text-green-700 dark:text-green-300' :
+                        ticket.status === 'closed' ? 'text-gray-700 dark:text-gray-300' : 'text-gray-600'
+                      }`}>
+                        {ticket.status === 'new' ? 'New' :
+                         ticket.status === 'in_progress' ? 'In Progress' :
+                         ticket.status === 'waiting_for_customer' ? 'Waiting for Customer' :
+                         ticket.status === 'waiting_for_agent' ? 'Waiting for Agent' :
+                         ticket.status === 'resolved' ? 'Resolved' :
+                         ticket.status === 'closed' ? 'Closed' : ticket.status}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">PRIORITY</div>
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-2 h-2 rounded-full ${
+                        ticket.priority === 'critical' ? 'bg-red-500' :
+                        ticket.priority === 'high' ? 'bg-orange-500' :
+                        ticket.priority === 'medium' ? 'bg-yellow-500' :
+                        ticket.priority === 'low' ? 'bg-green-500' : 'bg-gray-400'
+                      }`}></div>
+                      <span className={`text-sm font-medium ${
+                        ticket.priority === 'critical' ? 'text-red-700 dark:text-red-300' :
+                        ticket.priority === 'high' ? 'text-orange-700 dark:text-orange-300' :
+                        ticket.priority === 'medium' ? 'text-yellow-700 dark:text-yellow-300' :
+                        ticket.priority === 'low' ? 'text-green-700 dark:text-green-300' : 'text-gray-600'
+                      }`}>
+                        {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Tags Section */}
                 {ticket.tagIds && ticket.tagIds.length > 0 && (
-                  <div className="mb-6">
+                  <div className="mb-8">
                     <div className="flex items-center mb-3">
                       <TagIcon className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400" />
                       <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Tags</h4>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-2">
                       {ticket.tagIds.map((tag, index) => (
                         <span
                           key={index}
-                          className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-orange-50 text-orange-700 rounded border border-orange-200 dark:bg-orange-900/10 dark:text-orange-400 dark:border-orange-800"
+                          className="inline-flex items-center px-3 py-1 text-xs font-medium bg-orange-50 text-orange-700 rounded-full border border-orange-200 dark:bg-orange-900/10 dark:text-orange-400 dark:border-orange-800"
                         >
                           <span className="text-[10px] opacity-60 mr-1">{tag.key}:</span>
                           <span className="text-xs">{tag.value}</span>
@@ -286,124 +406,6 @@ export default function TicketDetailPage() {
                   </div>
                 )}
 
-                {/* Agent Status Controls */}
-                {canModifyTicket && ticket.status !== 'closed' && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-3">
-                      Ticket Actions
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {ticket.status === 'new' && (
-                        <Button
-                          size="xs"
-                          className="bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
-                          onClick={() => handleStatusUpdate('in_progress')}
-                          disabled={updatingStatus}
-                        >
-                          <Edit3 className="h-3 w-3 mr-1" />
-                          Start Work
-                        </Button>
-                      )}
-                      
-                      {ticket.status === 'in_progress' && (
-                        <>
-                          <Button
-                            size="xs"
-                            className="bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500"
-                            onClick={() => handleStatusUpdate('waiting_for_customer')}
-                            disabled={updatingStatus}
-                          >
-                            <MessageCircle className="h-3 w-3 mr-1" />
-                            Wait for Customer
-                          </Button>
-                          <Button
-                            size="xs"
-                            className="bg-green-600 hover:bg-green-700 focus:ring-green-500"
-                            onClick={() => handleStatusUpdate('resolved')}
-                            disabled={updatingStatus}
-                          >
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Resolve
-                          </Button>
-                        </>
-                      )}
-                      
-                      {ticket.status === 'waiting_for_customer' && (
-                        <Button
-                          size="xs"
-                          className="bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
-                          onClick={() => handleStatusUpdate('in_progress')}
-                          disabled={updatingStatus}
-                        >
-                          <Edit3 className="h-3 w-3 mr-1" />
-                          Resume Work
-                        </Button>
-                      )}
-
-                      {ticket.status === 'waiting_for_agent' && (
-                        <Button
-                          size="xs"
-                          className="bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
-                          onClick={() => handleStatusUpdate('in_progress')}
-                          disabled={updatingStatus}
-                        >
-                          <Edit3 className="h-3 w-3 mr-1" />
-                          Resume Work
-                        </Button>
-                      )}
-
-                      {(ticket.status === 'in_progress' || ticket.status === 'resolved') && (
-                        <Button
-                          size="xs"
-                          className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
-                          onClick={() => setShowCloseForm(!showCloseForm)}
-                          disabled={updatingStatus}
-                        >
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Close Ticket
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Close Ticket Form */}
-                    {showCloseForm && (
-                      <div className="mt-4 border-t border-blue-200 dark:border-blue-700 pt-4">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Closing Comment <span className="text-red-500">*</span>
-                        </label>
-                        <Textarea
-                          value={closingComment}
-                          onChange={(e) => setClosingComment(e.target.value)}
-                          placeholder="Describe how the issue was resolved..."
-                          rows={3}
-                          className="w-full mb-3"
-                          required
-                        />
-                        <div className="flex space-x-2">
-                          <Button
-                            size="xs"
-                            className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
-                            onClick={handleCloseTicket}
-                            disabled={!closingComment.trim() || updatingStatus}
-                          >
-                            {updatingStatus ? 'Closing...' : 'Close Ticket'}
-                          </Button>
-                          <Button
-                            size="xs"
-                            color="gray"
-                            onClick={() => {
-                              setShowCloseForm(false);
-                              setClosingComment('');
-                            }}
-                            disabled={updatingStatus}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {/* ENHANCEMENT L1 AI TICKET SUMMARY - AI Summary section for agents */}
                 {user?.role === 'agent' && ticket.status !== 'closed' && (
@@ -470,8 +472,8 @@ export default function TicketDetailPage() {
 
                 {/* Description */}
                 <div>
-                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Description</h4>
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Description</h4>
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                     <RichTextEditor
                       content={convertLegacyContent(ticket.content)}
                       editable={false}
@@ -482,97 +484,104 @@ export default function TicketDetailPage() {
               </div>
 
               {/* Comments Section */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Comments ({comments.length})
-                  </h4>
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                {/* Comments Header */}
+                <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                  <div className="flex items-center space-x-2">
+                    <MessageCircle className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Activity & Comments
+                    </h3>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">({comments.length})</span>
+                  </div>
                 </div>
                 
                 {/* Comments List */}
-                <div className="space-y-6 mb-8">
-                  {comments.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                      <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium">No comments yet</p>
-                      <p className="text-sm">Be the first to add a comment!</p>
-                    </div>
-                  ) : (
-                    comments.map((comment) => (
-                      <div key={comment.id} className="flex space-x-4">
-                        <Avatar
-                          img=""
-                          alt={comment.user.name || comment.user.email}
-                          size="md"
-                          className="flex-shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="font-semibold text-gray-900 dark:text-white">
-                              {comment.user.name || comment.user.email}
-                            </span>
-                            {comment.user.role && (
-                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                comment.user.role === 'agent' 
-                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
-                                  : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                              }`}>
-                                {comment.user.role === 'agent' ? 'Agent' : 'Customer'}
+                <div className="px-6 py-4">
+                  <div className="space-y-6 mb-8">
+                    {comments.length === 0 ? (
+                      <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                        <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg font-medium">No comments yet</p>
+                        <p className="text-sm">Be the first to add a comment!</p>
+                      </div>
+                    ) : (
+                      comments.map((comment) => (
+                        <div key={comment.id} className="flex space-x-4 pb-6 border-b border-gray-100 dark:border-gray-700 last:border-b-0 last:pb-0">
+                          <Avatar
+                            img=""
+                            alt={comment.user.name || comment.user.email}
+                            size="md"
+                            className="flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-3">
+                              <span className="font-semibold text-gray-900 dark:text-white">
+                                {comment.user.name || comment.user.email}
                               </span>
-                            )}
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                              {formatFullDateTime(comment.created_at)}
-                            </span>
-                          </div>
-                          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                            <RichTextEditor
-                              content={convertLegacyContent(comment.content)}
-                              editable={false}
-                              className="border-none bg-transparent"
-                            />
+                              {comment.user.role && (
+                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                  comment.user.role === 'agent' 
+                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
+                                    : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                }`}>
+                                  {comment.user.role === 'agent' ? 'Agent' : 'Customer'}
+                                </span>
+                              )}
+                              <span className="text-sm text-gray-500 dark:text-gray-400">
+                                {formatFullDateTime(comment.created_at)}
+                              </span>
+                            </div>
+                            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                              <RichTextEditor
+                                content={convertLegacyContent(comment.content)}
+                                editable={false}
+                                className="border-none bg-transparent"
+                              />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                      ))
+                    )}
+                  </div>
 
-                {/* Add Comment Form */}
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                  <div className="flex space-x-4">
-                    <Avatar
-                      img=""
-                      alt="You"
-                      size="md"
-                      className="flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                        Add a comment
-                      </label>
-                      <div className="mb-4">
-                        <RichTextEditor
-                          content={newComment}
-                          onChange={setNewComment}
-                          placeholder="Type your comment here..."
-                          className="min-h-[140px]"
-                        />
-                      </div>
-                      <div className="flex justify-end space-x-3">
-                        <Button
-                          color="gray"
-                          onClick={() => setNewComment(createEmptyRichText())}
-                          disabled={!newComment.text.trim()}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500"
-                          onClick={handleAddComment}
-                          disabled={!newComment.text.trim() || submittingComment}
-                        >
-                          {submittingComment ? 'Adding...' : 'Add Comment'}
-                        </Button>
+                  {/* Add Comment Form */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <div className="flex space-x-4">
+                      <Avatar
+                        img=""
+                        alt="You"
+                        size="md"
+                        className="flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                          Add a comment
+                        </label>
+                        <div className="mb-4">
+                          <RichTextEditor
+                            content={newComment}
+                            onChange={setNewComment}
+                            placeholder="Type your comment here..."
+                            className="min-h-[140px] border-2 border-gray-200 dark:border-gray-600 rounded-lg"
+                          />
+                        </div>
+                        <div className="flex justify-end space-x-3">
+                          <Button
+                            color="gray"
+                            onClick={() => setNewComment(createEmptyRichText())}
+                            disabled={!newComment.text.trim()}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500"
+                            onClick={handleAddComment}
+                            disabled={!newComment.text.trim() || submittingComment}
+                          >
+                            {submittingComment ? 'Adding...' : 'Add Comment'}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -580,46 +589,159 @@ export default function TicketDetailPage() {
               </div>
             </div>
 
-            {/* Sidebar */}
+            {/* Actions Sidebar */}
             <div className="space-y-6">
-              {/* Ticket Info Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Ticket Information
-                </h3>
-                
-                <div className="space-y-4 text-sm">
-                  <div>
-                    <dt className="font-medium text-gray-500 dark:text-gray-400">Created</dt>
-                    <dd className="mt-1 text-gray-900 dark:text-white">
-                      {formatFullDateTime(ticket.createdAt)}
-                    </dd>
+              {/* Action Buttons Card */}
+              {canModifyTicket && ticket.status !== 'closed' && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                      Actions
+                    </h3>
                   </div>
-                  <div>
-                    <dt className="font-medium text-gray-500 dark:text-gray-400">Updated</dt>
-                    <dd className="mt-1 text-gray-900 dark:text-white">
-                      {formatFullDateTime(ticket.updatedAt)}
-                    </dd>
+                  <div className="p-4 space-y-3">
+                    {ticket.status === 'new' && (
+                      <Button
+                        size="sm"
+                        className="w-full bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 justify-start"
+                        onClick={() => handleStatusUpdate('in_progress')}
+                        disabled={updatingStatus}
+                      >
+                        <Edit3 className="h-4 w-4 mr-2" />
+                        Start Work
+                      </Button>
+                    )}
+                    
+                    {ticket.status === 'in_progress' && (
+                      <>
+                        <Button
+                          size="sm"
+                          className="w-full bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500 justify-start"
+                          onClick={() => handleStatusUpdate('waiting_for_customer')}
+                          disabled={updatingStatus}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          Wait for Customer
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="w-full bg-green-600 hover:bg-green-700 focus:ring-green-500 justify-start"
+                          onClick={() => handleStatusUpdate('resolved')}
+                          disabled={updatingStatus}
+                        >
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Mark Resolved
+                        </Button>
+                      </>
+                    )}
+                    
+                    {(ticket.status === 'waiting_for_customer' || ticket.status === 'waiting_for_agent') && (
+                      <Button
+                        size="sm"
+                        className="w-full bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 justify-start"
+                        onClick={() => handleStatusUpdate('in_progress')}
+                        disabled={updatingStatus}
+                      >
+                        <Edit3 className="h-4 w-4 mr-2" />
+                        Resume Work
+                      </Button>
+                    )}
+
+                    {(ticket.status === 'in_progress' || ticket.status === 'resolved') && (
+                      <Button
+                        size="sm"
+                        className="w-full bg-red-600 hover:bg-red-700 focus:ring-red-500 justify-start"
+                        onClick={() => setShowCloseForm(!showCloseForm)}
+                        disabled={updatingStatus}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Close Ticket
+                      </Button>
+                    )}
                   </div>
-                  <div>
-                    <dt className="font-medium text-gray-500 dark:text-gray-400">Reporter</dt>
-                    <dd className="mt-1 text-gray-900 dark:text-white">
-                      {ticket.userInfo?.name || ticket.userInfo?.email}
-                    </dd>
-                  </div>
-                  {ticket.agentInfo && (
-                    <div>
-                      <dt className="font-medium text-gray-500 dark:text-gray-400">Assigned to</dt>
-                      <dd className="mt-1 text-gray-900 dark:text-white">
-                        {ticket.agentInfo.name || ticket.agentInfo.email}
-                      </dd>
+
+                  {/* Close Ticket Form */}
+                  {showCloseForm && (
+                    <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Closing Comment <span className="text-red-500">*</span>
+                      </label>
+                      <Textarea
+                        value={closingComment}
+                        onChange={(e) => setClosingComment(e.target.value)}
+                        placeholder="Describe how the issue was resolved..."
+                        rows={3}
+                        className="w-full mb-3"
+                        required
+                      />
+                      <div className="flex flex-col space-y-2">
+                        <Button
+                          size="sm"
+                          className="w-full bg-red-600 hover:bg-red-700 focus:ring-red-500"
+                          onClick={handleCloseTicket}
+                          disabled={!closingComment.trim() || updatingStatus}
+                        >
+                          {updatingStatus ? 'Closing...' : 'Close Ticket'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          color="gray"
+                          className="w-full"
+                          onClick={() => {
+                            setShowCloseForm(false);
+                            setClosingComment('');
+                          }}
+                          disabled={updatingStatus}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
                   )}
-                  <div>
-                    <dt className="font-medium text-gray-500 dark:text-gray-400">Category</dt>
-                    <dd className="mt-1 text-gray-900 dark:text-white">
-                      {ticket.category?.name} → {ticket.subCategory?.name}
-                    </dd>
+                </div>
+              )}
+
+              {/* Ticket Info Card */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                    Details
+                  </h3>
+                </div>
+                <div className="p-4">
+                  <div className="space-y-4 text-sm">
+                    <div>
+                      <dt className="font-medium text-gray-500 dark:text-gray-400 mb-1">Created</dt>
+                      <dd className="text-gray-900 dark:text-white">
+                        {formatFullDateTime(ticket.createdAt)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-gray-500 dark:text-gray-400 mb-1">Updated</dt>
+                      <dd className="text-gray-900 dark:text-white">
+                        {formatFullDateTime(ticket.updatedAt)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-gray-500 dark:text-gray-400 mb-1">Reporter</dt>
+                      <dd className="text-gray-900 dark:text-white">
+                        {ticket.userInfo?.name || ticket.userInfo?.email}
+                      </dd>
+                    </div>
+                    {ticket.agentInfo && (
+                      <div>
+                        <dt className="font-medium text-gray-500 dark:text-gray-400 mb-1">Assigned to</dt>
+                        <dd className="text-gray-900 dark:text-white">
+                          {ticket.agentInfo.name || ticket.agentInfo.email}
+                        </dd>
+                      </div>
+                    )}
+                    <div>
+                      <dt className="font-medium text-gray-500 dark:text-gray-400 mb-1">Category</dt>
+                      <dd className="text-gray-900 dark:text-white">
+                        {ticket.category?.name} → {ticket.subCategory?.name}
+                      </dd>
+                    </div>
                   </div>
                 </div>
               </div>

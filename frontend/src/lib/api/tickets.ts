@@ -18,7 +18,6 @@ export const ticketsApi = {
   async getAll(params?: {
     status?: string;
     priority?: string;
-    severity?: string;
     categoryId?: string;
     subCategoryId?: string;
     userId?: string;
@@ -59,7 +58,6 @@ export const ticketsApi = {
     q: string;
     status?: string;
     priority?: string;
-    severity?: string;
     categoryId?: string;
   }): Promise<Ticket[]> {
     return apiClient.get(API_ENDPOINTS.TICKETS.SEARCH, { params });
