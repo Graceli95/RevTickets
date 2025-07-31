@@ -14,7 +14,7 @@ from src.models.ticket import Ticket
 from src.models.comment import Comment
 from src.models.agent_info import AgentInfo
 from src.models.article import Article
-from src.models.enums import UserRole, TicketStatus, TicketPriority, TicketSeverity
+from src.models.enums import UserRole, TicketStatus, TicketPriority
 from src.models.rich_text import create_rich_text_from_html
 from src.utils.security import hash_password
 from src.db.init_db import init_db
@@ -249,28 +249,24 @@ async def create_demo_tickets(users, categories):
                 "description": "Desktop computer completely unresponsive after building power outage last night. No power lights, fans, or startup sounds when pressing power button. Urgent issue affecting client presentations scheduled for today. Already verified power cable connections and monitor functionality.",
                 "content": "<h3>Issue Description</h3><p>I came into work this morning and my <strong>desktop computer won't start</strong> after the power outage last night.</p><h4>Steps I've tried:</h4><ul><li>Checked power cable - it's plugged in properly</li><li>Tested monitor - it's working fine</li><li>Pressed power button multiple times</li></ul><p><em>When I press the power button, nothing happens - no lights, no fan noise, nothing.</em></p><p>This is urgent as I have client presentations today.</p>",
                 "priority": TicketPriority.high,
-                "severity": TicketSeverity.high
             },
             {
                 "title": "VPN connection timeout from home office",
                 "description": "Unable to establish VPN connection while working from home. Getting 'Connection timeout - Unable to reach VPN server' error message. Internet connection is stable and this worked properly last week. Already tried different servers and restarted equipment.",
                 "content": "<h3>VPN Connection Issue</h3><p>I'm working from home and <strong>cannot connect to the company VPN</strong>.</p><h4>Error Details:</h4><blockquote><p>Error message: <em>'Connection timeout - Unable to reach VPN server'</em></p></blockquote><h4>Additional Information:</h4><ul><li>This worked fine last week</li><li>Internet connection is stable (50Mbps down/10Mbps up)</li><li>Tried different VPN servers in the client</li><li>Restarted router and computer</li></ul><p>Please help resolve this as soon as possible.</p>",
                 "priority": TicketPriority.high,
-                "severity": TicketSeverity.medium
             },
             {
                 "title": "Outlook crashes when opening PDF attachments",
                 "description": "Microsoft Outlook crashes immediately when attempting to open PDF attachments. Issue started after latest Windows update. Only affects PDF files - Word documents open normally. Crashes cause application restart but attachments remain inaccessible.",
                 "content": "<h3>Outlook Crash Issue</h3><p>Every time I try to open a <strong>PDF attachment in Outlook</strong>, the application crashes completely.</p><h4>Problem Details:</h4><ul><li>Started happening after the latest Windows update</li><li>Only affects PDF files (Word docs open fine)</li><li>Crash occurs immediately upon clicking attachment</li><li>Outlook restarts automatically but attachment doesn't open</li></ul><h4>System Info:</h4><p><strong>OS:</strong> Windows 11 Enterprise<br><strong>Outlook Version:</strong> Microsoft 365</p><p>This is affecting my daily workflow significantly.</p>",
                 "priority": TicketPriority.medium,
-                "severity": TicketSeverity.medium
             },
             {
                 "title": "Shared printer offline - 3rd floor",
                 "description": "HP LaserJet Pro printer on 3rd floor showing as offline across multiple computers. Printer display shows ready status but all print jobs remain stuck in queue. Issue started around 2 PM and affects entire department. Basic troubleshooting already attempted.",
                 "content": "<h3>Printer Offline Issue</h3><p>The <strong>shared network printer on the 3rd floor</strong> (HP LaserJet Pro) is showing as offline.</p><h4>Affected Users:</h4><ul><li>Multiple colleagues in my department</li><li>Started around 2 PM today</li><li>Print jobs are stuck in queue</li></ul><h4>Troubleshooting Attempted:</h4><ol><li>Restarted my computer</li><li>Removed and re-added printer</li><li>Checked printer display (shows ready)</li></ol><p><em>Note: The printer appears to be powered on and ready, but all computers show it as offline.</em></p>",
                 "priority": TicketPriority.medium,
-                "severity": TicketSeverity.medium
             }
         ],
         "HR Support": [
@@ -279,21 +275,18 @@ async def create_demo_tickets(users, categories):
                 "description": "Requesting help with health insurance enrollment during current open enrollment period. Need clarification on plan differences, spouse addition eligibility, and enrollment deadlines. Family situation has changed requiring better coverage than current Plan C Basic.",
                 "content": "<h3>Health Insurance Enrollment</h3><p>I need help with my <strong>health insurance enrollment</strong> during the current open enrollment period.</p><h4>Specific Questions:</h4><ul><li>What's the difference between Plan A and Plan B?</li><li>Can I add my spouse who just got laid off?</li><li>What's the deadline for making changes?</li></ul><h4>Current Situation:</h4><p>I'm currently on <em>Plan C (Basic)</em> but my family situation has changed and I need better coverage.</p><p>Could someone from HR call me or set up a meeting to discuss options?</p><p><strong>Best time to reach me:</strong> Mornings before 10 AM or after 3 PM</p>",
                 "priority": TicketPriority.medium,
-                "severity": TicketSeverity.low
             },
             {
                 "title": "Maternity leave policy questions",
                 "description": "Expecting baby in 3 months and need comprehensive information about company maternity leave policy. Questions about leave duration, pay structure, required paperwork, notification timeline, and potential work-from-home options before leave begins.",
                 "content": "<h3>Maternity Leave Information Request</h3><p>I'm expecting a baby in <strong>3 months</strong> and need information about our maternity leave policy.</p><h4>Questions:</h4><ol><li>How much leave am I entitled to?</li><li>Is it paid or unpaid?</li><li>What paperwork do I need to complete?</li><li>When should I notify my manager officially?</li><li>Can I work from home part-time before the leave?</li></ol><h4>Current Status:</h4><ul><li><strong>Department:</strong> Marketing</li><li><strong>Employment Duration:</strong> 2.5 years</li><li><strong>Expected Due Date:</strong> March 15th</li></ul><p>Please let me know what steps I need to take and any forms I should fill out.</p>",
                 "priority": TicketPriority.medium,
-                "severity": TicketSeverity.low
             },
             {
                 "title": "Professional development training request",
                 "description": "Requesting approval for Digital Marketing Summit 2024 conference attendance in Chicago (April 10-12). Event cost $1,200 plus travel expenses. Manager has provided verbal approval. Need guidance on reimbursement forms and procedures.",
                 "content": "<h3>Training & Development Request</h3><p>I would like to request approval for professional development training.</p><h4>Training Details:</h4><blockquote><p><strong>Event:</strong> Digital Marketing Summit 2024<br><strong>Date:</strong> April 10-12, 2024<br><strong>Location:</strong> Chicago, IL<br><strong>Cost:</strong> $1,200 (registration) + travel expenses</p></blockquote><h4>Business Justification:</h4><ul><li>Directly relevant to my role in digital marketing</li><li>Latest trends in social media advertising</li><li>Networking opportunities with industry leaders</li><li>Will share learnings with the team</li></ul><h4>Manager Approval:</h4><p>My manager <em>Sarah Johnson</em> has verbally approved this request.</p><p>Please let me know what forms I need to complete for reimbursement.</p>",
                 "priority": TicketPriority.low,
-                "severity": TicketSeverity.low
             }
         ],
         "Operations": [
@@ -302,21 +295,18 @@ async def create_demo_tickets(users, categories):
                 "description": "Marketing department quarterly office supply order for Q1. Need bulk quantities of copy paper, ink cartridges, notebooks, pens, and sticky notes. Prefer delivery first week of January to 2nd floor marketing office. Standard supplier and quantities listed.",
                 "content": "<h3>Quarterly Office Supply Request</h3><p>Our <strong>marketing department</strong> needs to place our Q1 office supply order.</p><h4>Items Needed:</h4><table border='1' style='border-collapse: collapse; width: 100%;'><tr><th>Item</th><th>Quantity</th><th>Notes</th></tr><tr><td>Copy paper (reams)</td><td>20</td><td>White, 20lb</td></tr><tr><td>Ink cartridges</td><td>8</td><td>Canon 245/246 combo</td></tr><tr><td>Notebooks</td><td>15</td><td>Spiral-bound, college ruled</td></tr><tr><td>Pens (blue)</td><td>50</td><td>Bic Round Stic</td></tr><tr><td>Sticky notes</td><td>20 pads</td><td>3x3 yellow</td></tr></table><h4>Delivery:</h4><p><strong>Preferred delivery date:</strong> First week of January<br><strong>Delivery location:</strong> Marketing office, 2nd floor<br><strong>Contact:</strong> me or my assistant Jennifer</p><p>Please confirm the order and provide estimated delivery date.</p>",
                 "priority": TicketPriority.low,
-                "severity": TicketSeverity.low
             },
             {
                 "title": "Business travel booking assistance",
                 "description": "Requesting assistance with business travel arrangements for important client meeting in San Francisco (February 15-17). Need flight booking, hotel near Financial District, and ground transportation. Meeting with TechCorpSolutions on February 16th at 2 PM.",
                 "content": "<h3>Business Travel Request</h3><p>I need assistance booking <strong>business travel</strong> for an important client meeting.</p><h4>Travel Details:</h4><ul><li><strong>Destination:</strong> San Francisco, CA</li><li><strong>Dates:</strong> February 15-17, 2024</li><li><strong>Departure:</strong> Monday morning (prefer 7-9 AM flight)</li><li><strong>Return:</strong> Wednesday evening (after 4 PM)</li></ul><h4>Requirements:</h4><ol><li><strong>Flight:</strong> Economy class, aisle seat preferred</li><li><strong>Hotel:</strong> Near Financial District, 3+ stars</li><li><strong>Ground Transportation:</strong> Airport shuttle or rideshare</li></ol><h4>Meeting Information:</h4><blockquote><p><strong>Client:</strong> TechCorpSolutions<br><strong>Meeting Date:</strong> Tuesday, Feb 16th at 2 PM<br><strong>Location:</strong> 123 Market Street, San Francisco</p></blockquote><p>Please provide flight options and hotel recommendations within our travel policy.</p>",
                 "priority": TicketPriority.medium,
-                "severity": TicketSeverity.low
             },
             {
                 "title": "New employee desk setup request",
                 "description": "New software developer Alex Thompson starting Monday January 22nd. Need complete workstation setup including MacBook Pro 16-inch, 27-inch 4K monitor, wireless peripherals, and desk phone. Desk D-47 confirmed with facilities. Setup must be ready by Friday for testing.",
                 "content": "<h3>New Employee Setup</h3><p>We have a <strong>new team member starting next Monday</strong> and need their workstation prepared.</p><h4>Employee Information:</h4><ul><li><strong>Name:</strong> Alex Thompson</li><li><strong>Department:</strong> Software Development</li><li><strong>Start Date:</strong> Monday, January 22nd</li><li><strong>Manager:</strong> David Rodriguez</li></ul><h4>Equipment Needed:</h4><table border='1' style='border-collapse: collapse; width: 100%;'><tr><th>Item</th><th>Specifications</th><th>Priority</th></tr><tr><td>Laptop</td><td>MacBook Pro 16' (Development spec)</td><td>High</td></tr><tr><td>Monitor</td><td>27' 4K display</td><td>High</td></tr><tr><td>Keyboard/Mouse</td><td>Wireless Apple set</td><td>Medium</td></tr><tr><td>Desk Phone</td><td>Standard office phone</td><td>Low</td></tr></table><h4>Location:</h4><p><strong>Desk Location:</strong> Open office area, Development section<br><strong>Desk Number:</strong> D-47 (confirmed with facilities)</p><p>Please confirm everything will be ready by Friday so we can test the setup.</p>",
                 "priority": TicketPriority.high,
-                "severity": TicketSeverity.medium
             }
         ]
     }
@@ -395,7 +385,6 @@ async def create_demo_tickets(users, categories):
                 agent_id=agent,
                 status=status,
                 priority=template["priority"],
-                severity=template["severity"],
                 tag_ids=[],
                 created_at=datetime.now(timezone.utc) - timedelta(days=days_ago),
                 updated_at=datetime.now(timezone.utc) - timedelta(hours=ticket_counter*2)

@@ -15,6 +15,7 @@ import {
 import { Bell, Menu, LogOut } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
@@ -43,15 +44,15 @@ export function Header({ onToggleSidebar }: HeaderProps) {
           <Menu className="h-4 w-4" />
         </Button>
         
-        <NavbarBrand href="/">
-          <div className="flex items-center space-x-2">
+        <NavbarBrand>
+          <Link href="/" className="flex items-center space-x-2">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
               <span className="text-white font-bold text-sm">TS</span>
             </div>
             <span className="self-center whitespace-nowrap text-xl font-semibold text-orange-600 dark:text-orange-400">
               TicketSystem
             </span>
-          </div>
+          </Link>
         </NavbarBrand>
       </div>
       

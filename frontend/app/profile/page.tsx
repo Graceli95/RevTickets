@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout, ProtectedRoute, LoadingSpinner } from '../../src/app/shared/components';
 import { Button, Card } from 'flowbite-react';
-import { Edit3, User, Settings } from 'lucide-react';
+import { Edit3, User } from 'lucide-react';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { categoriesApi, subCategoriesApi, apiClient } from '../../src/lib/api';
 import type { Category, SubCategory } from '../../src/app/shared/types';
@@ -34,7 +34,6 @@ export default function ProfilePage() {
         apiClient.get<AgentSpecialization>('/users/profile/agent-specialization')
       ]);
       
-      console.log('Fetched specialization data:', specializationData);
       
       setCategories(categoriesData);
       setSubcategories(subcategoriesData);

@@ -1,4 +1,4 @@
-import type { TicketStatus, TicketPriority, TicketSeverity } from '../app/shared/types';
+import type { TicketStatus, TicketPriority } from '../app/shared/types';
 
 export const TICKET_STATUS: Record<string, TicketStatus> = {
   NEW: 'new',
@@ -10,13 +10,6 @@ export const TICKET_STATUS: Record<string, TicketStatus> = {
 } as const;
 
 export const TICKET_PRIORITY: Record<string, TicketPriority> = {
-  LOW: 'low',
-  MEDIUM: 'medium',
-  HIGH: 'high',
-  CRITICAL: 'critical',
-} as const;
-
-export const TICKET_SEVERITY: Record<string, TicketSeverity> = {
   LOW: 'low',
   MEDIUM: 'medium',
   HIGH: 'high',
@@ -39,13 +32,6 @@ export const PRIORITY_LABELS: Record<TicketPriority, string> = {
   critical: 'Critical',
 } as const;
 
-export const SEVERITY_LABELS: Record<TicketSeverity, string> = {
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
-  critical: 'Critical',
-} as const;
-
 export const STATUS_COLORS: Record<TicketStatus, string> = {
   new: 'text-blue-600 bg-blue-100',
   in_progress: 'text-orange-600 bg-orange-100',
@@ -62,9 +48,3 @@ export const PRIORITY_COLORS: Record<TicketPriority, string> = {
   critical: 'text-red-600 bg-red-100',
 } as const;
 
-export const SEVERITY_COLORS: Record<TicketSeverity, string> = {
-  low: 'text-blue-600 bg-blue-100',
-  medium: 'text-indigo-600 bg-indigo-100',
-  high: 'text-purple-600 bg-purple-100',
-  critical: 'text-red-600 bg-red-100',
-} as const;
