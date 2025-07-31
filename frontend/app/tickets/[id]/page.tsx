@@ -11,7 +11,7 @@ import { RichTextEditor } from '../../../src/app/shared/components/RichTextEdito
 import { ticketsApi } from '../../../src/lib/api';
 import { formatFullDateTime } from '../../../src/lib/utils';
 import { useAuth } from '../../../src/contexts/AuthContext';
-import type { Ticket, Comment, CreateComment, RichTextContent, TicketStatus, TicketSummaryResponse } from '../../../src/app/shared/types';
+import type { Ticket, Comment, CreateComment, RichTextContent, TicketStatus } from '../../../src/app/shared/types';
 import { createEmptyRichText, convertLegacyContent } from '../../../src/lib/utils';
 
 export default function TicketDetailPage() {
