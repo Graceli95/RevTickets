@@ -46,3 +46,8 @@ async def get_articles_by_category(category_id: str):
 @router.get("/subcategory/{subcategory_id}", response_model=List[ArticleResponse], dependencies=[Depends(get_current_user)])
 async def get_articles_by_subcategory(subcategory_id: str):
     return await ArticleService.get_articles_by_subcategory(subcategory_id)
+
+# ENHANCEMENT L1 KB TITLE SEARCH - Search endpoint
+@router.get("/search", response_model=List[ArticleResponse], dependencies=[Depends(get_current_user)])
+async def search_articles(q: str, categoryId: str = None, subcategoryId: str = None):
+    return await ArticleService.search_articles(q, categoryId, subcategoryId)
