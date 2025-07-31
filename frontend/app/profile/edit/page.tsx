@@ -35,7 +35,6 @@ export default function EditProfilePage() {
         apiClient.get<AgentSpecialization>('/users/profile/agent-specialization')
       ]);
       
-      console.log('Fetched specialization data:', specializationData);
       
       setCategories(categoriesData);
       setSubcategories(subcategoriesData);
@@ -80,10 +79,6 @@ export default function EditProfilePage() {
         return;
       }
       
-      console.log('Saving specialization:', {
-        category_id: specialization.category_id,
-        subcategory_ids: specialization.subcategory_ids
-      });
       
       await apiClient.put('/users/profile/agent-specialization', {
         category_id: specialization.category_id,

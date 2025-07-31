@@ -1,1 +1,2 @@
-export * from './StatsCard';
+// Dashboard features exports
+// No components currently exported

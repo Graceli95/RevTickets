@@ -11,7 +11,7 @@ from .subcategory import SubCategory
 from .tag import Tag
 from .ticket import Ticket
 from .comment import Comment
-from .enums import TicketStatus, TicketPriority, TicketSeverity
+from .enums import TicketStatus, TicketPriority
 
 __all__ = [
     'RichTextContent',
@@ -25,6 +25,5 @@ __all__ = [
     'Ticket',
     'Comment',
     'TicketStatus',
-    'TicketPriority',
-    'TicketSeverity'
+    'TicketPriority'
 ]
