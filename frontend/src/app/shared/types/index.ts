@@ -11,5 +11,5 @@ export type { Tag } from './category';
 export type { Category } from './category';
 export type { SubCategory } from './subcategory';
 export type { Ticket } from './ticket';
-export type { TicketStatus, TicketPriority, TicketSeverity } from './ticket';
+export type { TicketStatus, TicketPriority } from './ticket';
 export type { User, UserRole } from './user';
