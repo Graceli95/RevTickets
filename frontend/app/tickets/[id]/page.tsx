@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Breadcrumb, BreadcrumbItem, Button, Avatar, Textarea } from 'flowbite-react';
-import { MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Tag as TagIcon } from 'lucide-react';
+import { MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home } from 'lucide-react';
 import Link from 'next/link';
 import { MainLayout, ProtectedRoute } from '../../../src/app/shared/components';
 import { LoadingSpinner } from '../../../src/app/shared/components';
@@ -355,26 +355,6 @@ export default function TicketDetailPage() {
                   </div>
                 </div>
 
-                {/* Tags Section */}
-                {ticket.tagIds && ticket.tagIds.length > 0 && (
-                  <div className="mb-8">
-                    <div className="flex items-center mb-3">
-                      <TagIcon className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400" />
-                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Tags</h4>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {ticket.tagIds.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center px-3 py-1 text-xs font-medium bg-orange-50 text-orange-700 rounded-full border border-orange-200 dark:bg-orange-900/10 dark:text-orange-400 dark:border-orange-800"
-                        >
-                          <span className="text-[10px] opacity-60 mr-1">{tag.key}:</span>
-                          <span className="text-xs">{tag.value}</span>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
 
                 {/* Description */}
