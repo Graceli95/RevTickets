@@ -74,8 +74,8 @@ export interface Comment {
   ticket_id: string;
   user: UserInfo;
   content: RichTextContent;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateComment {
@@ -86,7 +86,6 @@ export interface UpdateComment {
   content: RichTextContent;
 }
 
-// Legacy aliases for backward compatibility
 export type CreateTicket = CreateTicketRequest;
 export type UpdateTicket = UpdateTicketRequest;
 
