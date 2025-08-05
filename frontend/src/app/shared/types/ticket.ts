@@ -74,8 +74,8 @@ export interface Comment {
   ticket_id: string;
   user: UserInfo;
   content: RichTextContent;
-  created_at: string;
-  updated_at: string;
+  createdAt: string; // Changed from created_at to match backend alias
+  updatedAt: string; // Changed from updated_at to match backend alias
 }
 
 export interface CreateComment {
