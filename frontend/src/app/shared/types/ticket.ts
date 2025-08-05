@@ -77,8 +77,8 @@ export interface Comment {
   ticket_id: string;
   user: UserInfo;
   content: RichTextContent;
-  createdAt: string; // Changed from created_at to match backend alias
-  updatedAt: string; // Changed from updated_at to match backend alias
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateComment {
@@ -98,7 +98,6 @@ export interface ClosingCommentsResponse {
   suggestions: string[];
 }
 
-// Legacy aliases for backward compatibility
 export type CreateTicket = CreateTicketRequest;
 export type UpdateTicket = UpdateTicketRequest;
 
