@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 import { API_ENDPOINTS } from '../../constants/api';
-import type { Category, SubCategory, Tag, CreateCategoryRequest, CreateSubCategoryRequest, CreateTagRequest } from '../../app/shared/types';
+import type { Category, SubCategory, CreateCategoryRequest, CreateSubCategoryRequest } from '../../app/shared/types';
 
 export const categoriesApi = {
   async getAll(): Promise<Category[]> {
@@ -52,20 +52,3 @@ export const subCategoriesApi = {
   },
 };
 
-export const tagsApi = {
-  async getAll(): Promise<Tag[]> {
-    return apiClient.get(API_ENDPOINTS.TAGS.BASE);
-  },
-
-  async create(tag: CreateTagRequest): Promise<Tag> {
-    return apiClient.post(API_ENDPOINTS.TAGS.BASE, tag);
-  },
-
-  async update(id: string, tag: CreateTagRequest): Promise<Tag> {
-    return apiClient.put(API_ENDPOINTS.TAGS.BY_ID(id), tag);
-  },
-
-  async delete(id: string): Promise<void> {
-    return apiClient.delete(API_ENDPOINTS.TAGS.BY_ID(id));
-  },
-};

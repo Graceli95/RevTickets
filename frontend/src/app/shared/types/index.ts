@@ -7,7 +7,6 @@ export * from './article';
 export * from './api';
 
 // Legacy exports for backward compatibility (these should be updated over time)
-export type { Tag } from './category';
 export type { Category } from './category';
 export type { SubCategory } from './subcategory';
 export type { Ticket } from './ticket';

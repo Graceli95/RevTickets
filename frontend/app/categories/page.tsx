@@ -11,7 +11,7 @@ export default function CategoriesPage() {
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Categories Management</h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Organize and manage ticket categories, subcategories, and tags
+              Organize and manage ticket categories and subcategories
             </p>
           </div>
           
