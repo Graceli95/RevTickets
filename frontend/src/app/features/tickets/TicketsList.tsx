@@ -324,25 +324,6 @@ export function TicketsList() {
                         <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                           #{ticket.id}
                         </div>
-                        {/* Tags */}
-                        {ticket.tagIds && ticket.tagIds.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1.5">
-                            {ticket.tagIds.slice(0, 2).map((tag, index) => (
-                              <span
-                                key={index}
-                                className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium bg-orange-50 text-orange-600 rounded border border-orange-200 dark:bg-orange-900/10 dark:text-orange-400 dark:border-orange-800"
-                              >
-                                <span className="opacity-50 mr-0.5">{tag.key}:</span>
-                                {tag.value}
-                              </span>
-                            ))}
-                            {ticket.tagIds.length > 2 && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium bg-gray-50 text-gray-500 rounded border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700">
-                                +{ticket.tagIds.length - 2}
-                              </span>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </TableCell>
                     <TableCell className="py-4">

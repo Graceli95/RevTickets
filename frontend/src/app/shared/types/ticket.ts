@@ -21,7 +21,6 @@ export interface Ticket {
   subCategory: SubCategory;
   userInfo: UserInfo;
   agentInfo?: UserInfo;
-  tagIds?: Array<{ key: string; value: string }>;
   status: TicketStatus;
   priority: TicketPriority;
   createdAt: string;
@@ -46,7 +45,6 @@ export interface CreateTicketRequest {
   description: string;
   content: RichTextContent;
   priority?: TicketPriority;
-  tag_ids?: { [key: string]: string }[];
 }
 
 export interface UpdateTicketRequest {
@@ -56,7 +54,6 @@ export interface UpdateTicketRequest {
   status?: TicketStatus;
   priority?: TicketPriority;
   agent_id?: string;
-  tag_ids?: { [key: string]: string }[];
 }
 
 export interface TicketStats {
