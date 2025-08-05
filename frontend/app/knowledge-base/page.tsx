@@ -23,6 +23,7 @@ export default function KnowledgeBasePage() {
   const [searchResults, setSearchResults] = useState<Article[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchError, setSearchError] = useState<string>('');
 
   const fetchArticles = useCallback(async () => {
     try {
@@ -54,12 +55,14 @@ export default function KnowledgeBasePage() {
 
     try {
       setIsSearching(true);
+      setSearchError('');
       const results = await articlesApi.search({ q: query });
       setSearchResults(results);
       setShowSearchResults(true);
     } catch (error) {
       console.error('Failed to search articles:', error);
       setSearchResults([]);
+      setSearchError('Search failed. Please try again.');
     } finally {
       setIsSearching(false);
     }
@@ -68,8 +71,13 @@ export default function KnowledgeBasePage() {
   // ENHANCEMENT L1 KB TITLE SEARCH - Debounced search effect
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
-      if (searchQuery) {
+      if (searchQuery.trim()) {
         handleSearch(searchQuery);
+      } else {
+        // Clear search results when query is empty
+        setShowSearchResults(false);
+        setSearchResults([]);
+        setSearchError('');
       }
     }, 300);
 
@@ -80,6 +88,7 @@ export default function KnowledgeBasePage() {
     setSearchQuery('');
     setSearchResults([]);
     setShowSearchResults(false);
+    setSearchError('');
   };
 
   // ENHANCEMENT L1 KB TITLE SEARCH - Show search results when searching, all articles otherwise
@@ -143,7 +152,12 @@ export default function KnowledgeBasePage() {
                 Searching...
               </div>
             )}
-            {showSearchResults && (
+            {searchError && (
+              <div className="mt-2 text-sm text-red-600 dark:text-red-400">
+                {searchError}
+              </div>
+            )}
+            {showSearchResults && !searchError && (
               <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 Found {searchResults.length} article{searchResults.length !== 1 ? 's' : ''} for &ldquo;{searchQuery}&rdquo;
                 <button
