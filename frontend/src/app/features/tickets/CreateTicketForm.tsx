@@ -3,18 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Card, Label, TextInput, Textarea, Select } from 'flowbite-react';
-import { Save, X, AlertCircle, Tag as TagIcon, Plus } from 'lucide-react';
-import { ticketsApi, categoriesApi, subCategoriesApi, tagsApi } from '../../../lib/api';
+import { Save, X, AlertCircle } from 'lucide-react';
+import { ticketsApi, categoriesApi, subCategoriesApi } from '../../../lib/api';
 import { RichTextEditor } from '../../shared/components';
-import type { Category, SubCategory, Tag, CreateTicketRequest, TicketPriority, RichTextContent } from '../../shared/types';
+import type { Category, SubCategory, CreateTicketRequest, TicketPriority, RichTextContent } from '../../shared/types';
 import { createEmptyRichText, isRichTextEmpty } from '../../../lib/utils';
 
 export function CreateTicketForm() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [filteredSubCategories, setFilteredSubCategories] = useState<SubCategory[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -55,12 +53,8 @@ export function CreateTicketForm() {
   const fetchFormData = async () => {
     try {
       setLoading(true);
-      const [categoriesData, tagsData] = await Promise.all([
-        categoriesApi.getAll(),
-        tagsApi.getAll()
-      ]);
+      const categoriesData = await categoriesApi.getAll();
       setCategories(categoriesData);
-      setTags(tagsData);
     } catch (error) {
       console.error('Failed to fetch form data:', error);
     } finally {
@@ -84,20 +78,6 @@ export function CreateTicketForm() {
     }
   };
 
-  const handleTagToggle = (tag: Tag) => {
-    setSelectedTags(prev => {
-      const isSelected = prev.some(t => t.id === tag.id);
-      if (isSelected) {
-        return prev.filter(t => t.id !== tag.id);
-      } else {
-        return [...prev, tag];
-      }
-    });
-  };
-
-  const handleTagRemove = (tagId: string) => {
-    setSelectedTags(prev => prev.filter(t => t.id !== tagId));
-  };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -139,7 +119,6 @@ export function CreateTicketForm() {
         description: formData.description,
         content: formData.content,
         priority: formData.priority,
-        tag_ids: selectedTags.map(tag => ({ [tag.key]: tag.value })),
       };
 
       await ticketsApi.create(ticketData);
@@ -280,85 +259,6 @@ export function CreateTicketForm() {
 
         </div>
 
-        {/* Tags Selection */}
-        <div>
-          <Label className="mb-2 block">Tags (Optional)</Label>
-          <div className="space-y-3">
-            {/* Selected Tags Display */}
-            {selectedTags.length > 0 && (
-              <div className="flex flex-wrap gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                {selectedTags.map((tag) => (
-                  <span
-                    key={tag.id}
-                    className="inline-flex items-center px-3 py-1 text-sm font-medium bg-orange-100 text-orange-800 rounded-full dark:bg-orange-900/20 dark:text-orange-400"
-                  >
-                    <TagIcon className="h-3 w-3 mr-1" />
-                    {tag.key}: {tag.value}
-                    <button
-                      type="button"
-                      onClick={() => handleTagRemove(tag.id)}
-                      className="ml-2 text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Available Tags by Category */}
-            {tags.length > 0 && (
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg">
-                <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center">
-                    <Plus className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Available Tags
-                    </span>
-                  </div>
-                </div>
-                <div className="p-3 max-h-32 overflow-y-auto">
-                  {Object.entries(
-                    tags.reduce((acc, tag) => {
-                      if (!acc[tag.key]) acc[tag.key] = [];
-                      acc[tag.key].push(tag);
-                      return acc;
-                    }, {} as Record<string, Tag[]>)
-                  ).map(([key, keyTags]) => (
-                    <div key={key} className="mb-2 last:mb-0">
-                      <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 capitalize">
-                        {key.replace('_', ' ')}
-                      </h4>
-                      <div className="flex flex-wrap gap-1">
-                        {keyTags.map((tag) => {
-                          const isSelected = selectedTags.some(t => t.id === tag.id);
-                          return (
-                            <button
-                              key={tag.id}
-                              type="button"
-                              onClick={() => handleTagToggle(tag)}
-                              className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full transition-colors ${
-                                isSelected
-                                  ? 'bg-orange-600 text-white dark:bg-orange-600'
-                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                              }`}
-                            >
-                              {tag.value}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Add tags to help categorize and organize your ticket for better tracking and routing.
-            </p>
-          </div>
-        </div>
 
         {/* Detailed Description */}
         <div>
