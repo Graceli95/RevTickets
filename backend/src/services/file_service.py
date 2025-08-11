@@ -303,10 +303,6 @@ class FileService:
         """Attach files to a ticket"""
         
         try:
-            print(f"DEBUG: Attempting to attach files to ticket {ticket_id}")
-            print(f"DEBUG: File IDs: {file_ids}")
-            print(f"DEBUG: User ID: {user_id}")
-            
             db = await get_database()
             files_collection = db.file_metadata
             attachments_collection = db.ticket_file_attachments
@@ -314,12 +310,9 @@ class FileService:
             # Verify all files exist and user has access
             attachments = []
             for file_id in file_ids:
-                print(f"DEBUG: Processing file_id: {file_id}")
                 try:
                     file_doc_data = await files_collection.find_one({"_id": ObjectId(file_id)})
-                    print(f"DEBUG: File doc found: {file_doc_data is not None}")
                 except Exception as e:
-                    print(f"DEBUG: Error finding file with ObjectId({file_id}): {e}")
                     raise HTTPException(status_code=400, detail=f"Invalid file ID format: {file_id}")
                 
                 if not file_doc_data:
@@ -337,7 +330,6 @@ class FileService:
                     "file_id": file_id
                 })
                 if existing:
-                    print(f"DEBUG: File {file_id} already attached, skipping")
                     continue  # Skip already attached files
                 
                 # Create attachment
@@ -349,7 +341,6 @@ class FileService:
                 )
                 
                 await attachments_collection.insert_one(attachment.model_dump(exclude={"id"}))
-                print(f"DEBUG: Successfully attached file {file_id}")
                 
                 attachments.append(FileAttachmentResponse(
                     id=file_id,
@@ -360,16 +351,11 @@ class FileService:
                     uploaded_at=file_doc.upload_date
                 ))
             
-            print(f"DEBUG: Successfully attached {len(attachments)} files")
             return attachments
             
         except HTTPException:
             raise
         except Exception as e:
-            print(f"DEBUG: Exception in attach_files_to_ticket: {e}")
-            print(f"DEBUG: Exception type: {type(e)}")
-            import traceback
-            print(f"DEBUG: Traceback: {traceback.format_exc()}")
             raise HTTPException(status_code=500, detail=f"Failed to attach files: {str(e)}")
     
     async def get_ticket_attachments(self, ticket_id: str) -> List[FileAttachmentResponse]:

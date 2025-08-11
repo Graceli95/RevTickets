@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Breadcrumb, BreadcrumbItem, Button, Avatar, Textarea } from 'flowbite-react';
-import { MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Brain, Sparkles, Edit, Save, X, Clock, RotateCcw, Paperclip, Download, Eye } from 'lucide-react';
+import { MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Brain, Sparkles, Edit, Save, X, Clock, RotateCcw, Paperclip, Download, Eye, FileIcon } from 'lucide-react';
 import Link from 'next/link';
 import { MainLayout, ProtectedRoute } from '../../../src/app/shared/components';
 import { LoadingSpinner } from '../../../src/app/shared/components';
@@ -24,6 +24,12 @@ export default function TicketDetailPage() {
   const [loading, setLoading] = useState(true);
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [loadingAttachments, setLoadingAttachments] = useState(false);
+  
+  // File preview states
+  const [previewFile, setPreviewFile] = useState<FileAttachment | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [loadingPreview, setLoadingPreview] = useState(false);
   const [newComment, setNewComment] = useState<RichTextContent>(createEmptyRichText());
   const [submittingComment, setSubmittingComment] = useState(false);
   
@@ -94,6 +100,15 @@ export default function TicketDetailPage() {
       fetchTicketData();
     }
   }, [ticketId, fetchTicketData]);
+
+  // Cleanup preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const handleAddComment = async () => {
     if (!ticketId || !newComment.text.trim()) return;
@@ -194,6 +209,36 @@ export default function TicketDetailPage() {
       console.error('Failed to download file:', error);
       alert('Failed to download file. Please try again.');
     }
+  };
+
+  // ENHANCEMENT L2 FILE ATTACHMENTS - File preview handler
+  const handlePreviewFile = async (file: FileAttachment) => {
+    setPreviewFile(file);
+    setShowPreview(true);
+    setLoadingPreview(true);
+    
+    try {
+      // Fetch file as blob with authentication for preview
+      const blob = await filesApi.download(file.id);
+      const url = URL.createObjectURL(blob);
+      setPreviewUrl(url);
+    } catch (error) {
+      console.error('Failed to load file for preview:', error);
+      setPreviewUrl(''); // This will trigger the error state in the modal
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  const closePreview = () => {
+    // Clean up the object URL to prevent memory leaks
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl('');
+    }
+    setPreviewFile(null);
+    setShowPreview(false);
+    setLoadingPreview(false);
   };
 
   // ENHANCEMENT L1 AI CLOSING SUGGESTIONS - Generate closing suggestions function
@@ -662,12 +707,12 @@ export default function TicketDetailPage() {
                               </div>
                             </div>
                             <div className="flex items-center space-x-1 ml-2">
-                              {file.content_type.startsWith('image/') && (
+                              {(file.content_type.startsWith('image/') || file.content_type === 'application/pdf') && (
                                 <Button
                                   size="xs"
                                   color="gray"
-                                  onClick={() => window.open(file.url, '_blank')}
-                                  title="Preview image"
+                                  onClick={() => handlePreviewFile(file)}
+                                  title={`Preview ${file.content_type.startsWith('image/') ? 'image' : 'PDF'}`}
                                 >
                                   <Eye className="h-3 w-3" />
                                 </Button>
@@ -1105,6 +1150,87 @@ export default function TicketDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* ENHANCEMENT L2 FILE ATTACHMENTS - File Preview Modal */}
+        {showPreview && previewFile && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center space-x-3">
+                  <Eye className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {previewFile.filename}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {filesApi.formatFileSize(previewFile.size)} • {previewFile.content_type}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    size="sm"
+                    className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500"
+                    onClick={() => handleDownloadFile(previewFile.id, previewFile.filename)}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                  <Button
+                    color="gray"
+                    className="p-2"
+                    onClick={closePreview}
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Content */}
+              <div className="p-4 max-h-[calc(90vh-120px)] overflow-auto">
+                {loadingPreview ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                    <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">Loading preview...</span>
+                  </div>
+                ) : !previewUrl ? (
+                  <div className="text-center py-12 text-red-500 dark:text-red-400">
+                    <div className="text-center">
+                      <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Failed to load preview</p>
+                      <p className="text-sm mt-1">Try downloading the file instead</p>
+                    </div>
+                  </div>
+                ) : previewFile.content_type.startsWith('image/') ? (
+                  <div className="flex justify-center">
+                    <img
+                      src={previewUrl}
+                      alt={previewFile.filename}
+                      className="max-w-full max-h-full object-contain rounded-lg"
+                    />
+                  </div>
+                ) : previewFile.content_type === 'application/pdf' ? (
+                  <div className="w-full h-96">
+                    <iframe
+                      src={previewUrl}
+                      className="w-full h-full border-0 rounded-lg"
+                      title={`PDF Preview: ${previewFile.filename}`}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                    <div className="text-center">
+                      <FileIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Preview not available for this file type</p>
+                      <p className="text-sm mt-1">Please download the file to view it</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ENHANCEMENT L1 TICKET REOPENING - Reopen confirmation modal */}
         {showReopenConfirm && (
