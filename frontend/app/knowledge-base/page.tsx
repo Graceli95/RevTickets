@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Button, Card, Table, TableHead, TableHeadCell, TableRow, TableCell, TableBody } from 'flowbite-react';
-import { Plus, BookOpen, Calendar } from 'lucide-react';
+import { Button, Card, Table, TableHead, TableHeadCell, TableRow, TableCell, TableBody, TextInput } from 'flowbite-react';
+import { Plus, BookOpen, Calendar, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { MainLayout, ProtectedRoute } from '../../src/app/shared/components';
@@ -18,6 +18,12 @@ export default function KnowledgeBasePage() {
   const { user } = useAuth();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  // ENHANCEMENT L1 KB TITLE SEARCH - Search functionality state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Article[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchError, setSearchError] = useState<string>('');
 
   const fetchArticles = useCallback(async () => {
     try {
@@ -39,7 +45,54 @@ export default function KnowledgeBasePage() {
     router.push(`/knowledge-base/${articleId}`);
   };
 
-  const filteredArticles = articles;
+  // ENHANCEMENT L1 KB TITLE SEARCH - Search function
+  const handleSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setShowSearchResults(false);
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      setSearchError('');
+      const results = await articlesApi.search({ q: query });
+      setSearchResults(results);
+      setShowSearchResults(true);
+    } catch (error) {
+      console.error('Failed to search articles:', error);
+      setSearchResults([]);
+      setSearchError('Search failed. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // ENHANCEMENT L1 KB TITLE SEARCH - Debounced search effect
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      if (searchQuery.trim()) {
+        handleSearch(searchQuery);
+      } else {
+        // Clear search results when query is empty
+        setShowSearchResults(false);
+        setSearchResults([]);
+        setSearchError('');
+      }
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery, handleSearch]);
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowSearchResults(false);
+    setSearchError('');
+  };
+
+  // ENHANCEMENT L1 KB TITLE SEARCH - Show search results when searching, all articles otherwise
+  const displayArticles = showSearchResults ? searchResults : articles;
 
   if (loading) {
     return (
@@ -74,22 +127,80 @@ export default function KnowledgeBasePage() {
             </div>
           </div>
 
+          {/* ENHANCEMENT L1 KB TITLE SEARCH - Search interface */}
+          <Card>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <TextInput
+                type="text"
+                placeholder="Search knowledge base articles..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            {isSearching && (
+              <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                Searching...
+              </div>
+            )}
+            {searchError && (
+              <div className="mt-2 text-sm text-red-600 dark:text-red-400">
+                {searchError}
+              </div>
+            )}
+            {showSearchResults && !searchError && (
+              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                Found {searchResults.length} article{searchResults.length !== 1 ? 's' : ''} for &ldquo;{searchQuery}&rdquo;
+                <button
+                  onClick={clearSearch}
+                  className="ml-2 text-orange-600 hover:text-orange-700 underline"
+                >
+                  Clear search
+                </button>
+              </div>
+            )}
+          </Card>
+
 
           {/* Articles Table */}
           <Card>
-            {filteredArticles.length === 0 ? (
+            {displayArticles.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-gray-500 dark:text-gray-400">
                   <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">No articles yet</h3>
-                  <p className="text-sm">Articles will appear here once they are created</p>
-                  {user?.role === 'agent' && (
-                    <Link href="/knowledge-base/create">
-                      <Button className="mt-4 bg-orange-600 hover:bg-orange-700 focus:ring-orange-500">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create First Article
-                      </Button>
-                    </Link>
+                  {showSearchResults ? (
+                    <>
+                      <h3 className="text-lg font-medium mb-2">No articles found</h3>
+                      <p className="text-sm">No articles match your search for &ldquo;{searchQuery}&rdquo;</p>
+                      <button
+                        onClick={clearSearch}
+                        className="mt-4 text-orange-600 hover:text-orange-700 underline"
+                      >
+                        Clear search to see all articles
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-lg font-medium mb-2">No articles yet</h3>
+                      <p className="text-sm">Articles will appear here once they are created</p>
+                      {user?.role === 'agent' && (
+                        <Link href="/knowledge-base/create">
+                          <Button className="mt-4 bg-orange-600 hover:bg-orange-700 focus:ring-orange-500">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create First Article
+                          </Button>
+                        </Link>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -108,7 +219,7 @@ export default function KnowledgeBasePage() {
                     </TableRow>
                   </TableHead>
                   <TableBody className="divide-y">
-                    {filteredArticles.map((article) => (
+                    {displayArticles.map((article) => (
                       <TableRow
                         key={article.id}
                         className="bg-white dark:border-gray-700 dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
