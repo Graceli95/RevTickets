@@ -144,11 +144,12 @@ export function CategoriesList() {
       let categoryId: string;
       
       if (editingCategory) {
-        // Update existing category
-        await categoriesApi.update(editingCategory.id, {
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-        });
+        // BUG: Update API call not being made despite form submission appearing successful
+        // This causes category edit form to appear to save but changes aren't persisted to database
+        // await categoriesApi.update(editingCategory.id, {
+        //   name: formData.name.trim(),
+        //   description: formData.description.trim(),
+        // });
         categoryId = editingCategory.id;
       } else {
         // Create new category
