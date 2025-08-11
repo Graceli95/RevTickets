@@ -11,6 +11,7 @@ from .subcategory import SubCategory
 from .tag import Tag
 from .ticket import Ticket
 from .comment import Comment
+from .file import FileDocument, TicketFileAttachment
 from .enums import TicketStatus, TicketPriority
 
 __all__ = [
@@ -24,6 +25,8 @@ __all__ = [
     'Tag',
     'Ticket',
     'Comment',
+    'FileDocument',
+    'TicketFileAttachment',
     'TicketStatus',
     'TicketPriority'
 ]

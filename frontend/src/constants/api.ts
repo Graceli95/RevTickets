@@ -64,4 +64,18 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `/articles/${id}`,
     SEARCH: '/articles/search',
   },
+  
+  // Files (Enhancement L2)
+  FILES: {
+    UPLOAD: '/files/upload',
+    UPLOAD_BULK: '/files/upload/bulk',
+    BY_ID: (id: string) => `/files/${id}`,
+    DOWNLOAD: (id: string) => `/files/${id}/download`,
+    PREVIEW: (id: string) => `/files/${id}/preview`,
+    DELETE: (id: string) => `/files/${id}`,
+    // Ticket file attachment endpoints
+    ATTACH_TO_TICKET: (ticketId: string) => `/files/tickets/${ticketId}/attach`,
+    GET_TICKET_FILES: (ticketId: string) => `/files/tickets/${ticketId}`,
+    DETACH_FROM_TICKET: (ticketId: string, fileId: string) => `/files/tickets/${ticketId}/${fileId}`,
+  },
 } as const;

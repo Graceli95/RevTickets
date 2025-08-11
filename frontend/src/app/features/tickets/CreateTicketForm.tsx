@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Button, Card, Label, TextInput, Textarea, Select } from 'flowbite-react';
 import { Save, X, AlertCircle } from 'lucide-react';
 import { ticketsApi, categoriesApi, subCategoriesApi } from '../../../lib/api';
-import { RichTextEditor } from '../../shared/components';
-import type { Category, SubCategory, CreateTicketRequest, TicketPriority, RichTextContent } from '../../shared/types';
+import { RichTextEditor, FileUpload } from '../../shared/components';
+import type { Category, SubCategory, CreateTicketRequest, TicketPriority, RichTextContent, FileAttachmentUpload } from '../../shared/types';
+import { filesApi } from '../../../lib/api/files';
 import { createEmptyRichText, isRichTextEmpty } from '../../../lib/utils';
 
 export function CreateTicketForm() {
@@ -16,6 +17,7 @@ export function CreateTicketForm() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [attachments, setAttachments] = useState<FileAttachmentUpload[]>([]);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -112,22 +114,83 @@ export function CreateTicketForm() {
     try {
       setSubmitting(true);
       
-      const ticketData: CreateTicketRequest = {
-        category_id: formData.categoryId,
-        sub_category_id: formData.subCategoryId,
-        title: formData.title,
-        description: formData.description,
-        content: formData.content,
-        priority: formData.priority,
-      };
-
-      await ticketsApi.create(ticketData);
+      // First, upload any pending file attachments
+      const uploadedFiles: string[] = [];
+      let uploadFailed = false;
       
-      // Redirect to tickets list with success message
-      router.push('/tickets?success=created');
+      for (let i = 0; i < attachments.length; i++) {
+        const attachment = attachments[i];
+        if (attachment.file && !attachment.uploaded) {
+          try {
+            // Update progress
+            setAttachments(prev => prev.map((att, index) => 
+              index === i ? { ...att, uploadProgress: 0, uploadError: undefined } : att
+            ));
+
+            const uploadResponse = await filesApi.upload(attachment.file, (progress) => {
+              setAttachments(prev => prev.map((att, index) => 
+                index === i ? { ...att, uploadProgress: progress } : att
+              ));
+            });
+
+            uploadedFiles.push(uploadResponse.id);
+            
+            // Mark as uploaded
+            setAttachments(prev => prev.map((att, index) => 
+              index === i ? { 
+                ...att, 
+                uploaded: true, 
+                uploadProgress: 100,
+                id: uploadResponse.id,
+                url: uploadResponse.url
+              } : att
+            ));
+          } catch (error) {
+            console.error(`Failed to upload file ${attachment.name}:`, error);
+            setAttachments(prev => prev.map((att, index) => 
+              index === i ? { ...att, uploadError: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}` } : att
+            ));
+            uploadFailed = true;
+            setErrors({ submit: `Failed to upload file: ${attachment.name}. Please try again.` });
+            return; // Stop processing and don't create ticket
+          }
+        } else if (attachment.id) {
+          // File already uploaded
+          uploadedFiles.push(attachment.id);
+        }
+      }
+      
+      // Only proceed if no upload failures
+      if (!uploadFailed) {
+        const ticketData: CreateTicketRequest = {
+          category_id: formData.categoryId,
+          sub_category_id: formData.subCategoryId,
+          title: formData.title,
+          description: formData.description,
+          content: formData.content,
+          priority: formData.priority,
+        };
+
+        const ticket = await ticketsApi.create(ticketData);
+        
+        // Attach files to the ticket if any were uploaded
+        if (uploadedFiles.length > 0) {
+          try {
+            await filesApi.attachToTicket(ticket.id, uploadedFiles);
+          } catch (attachError) {
+            console.error('Failed to attach files to ticket:', attachError);
+            // Ticket was created but file attachment failed - still consider it a success
+            // The user can attach files later if needed
+            console.warn('Ticket created successfully but file attachment failed. Files can be attached later.');
+          }
+        }
+        
+        // Redirect to tickets list with success message
+        router.push('/tickets?success=created');
+      }
     } catch (error) {
       console.error('Failed to create ticket:', error);
-      setErrors({ submit: 'Failed to create ticket. Please try again.' });
+      setErrors({ submit: `Failed to create ticket: ${error instanceof Error ? error.message : 'Please try again.'}` });
     } finally {
       setSubmitting(false);
     }
@@ -277,6 +340,20 @@ export function CreateTicketForm() {
               The more details you provide, the faster we can help resolve your issue.
             </p>
           </div>
+        </div>
+
+        {/* File Attachments */}
+        <div>
+          <Label className="mb-2 block">File Attachments</Label>
+          <FileUpload
+            attachments={attachments}
+            onAttachmentsChange={setAttachments}
+            disabled={submitting}
+            className="w-full"
+          />
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Optional: Attach relevant files like screenshots, documents, or logs to help us understand your issue better.
+          </p>
         </div>
 
         {/* Form Actions */}

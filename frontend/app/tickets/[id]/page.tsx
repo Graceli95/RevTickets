@@ -3,15 +3,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Breadcrumb, BreadcrumbItem, Button, Avatar, Textarea } from 'flowbite-react';
-import { MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Brain, Sparkles, Edit, Save, X, Clock, RotateCcw } from 'lucide-react';
+import { MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Brain, Sparkles, Edit, Save, X, Clock, RotateCcw, Paperclip, Download, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { MainLayout, ProtectedRoute } from '../../../src/app/shared/components';
 import { LoadingSpinner } from '../../../src/app/shared/components';
 import { RichTextEditor } from '../../../src/app/shared/components/RichTextEditor';
-import { ticketsApi } from '../../../src/lib/api';
+import { ticketsApi, filesApi } from '../../../src/lib/api';
 import { formatFullDateTime, canEditComment, getEditTimeRemaining, canReopenTicket, getReopenTimeRemaining } from '../../../src/lib/utils';
 import { useAuth } from '../../../src/contexts/AuthContext';
-import type { Ticket, Comment, CreateComment, RichTextContent, TicketStatus, ClosingCommentsResponse, TicketSummaryResponse } from '../../../src/app/shared/types';
+import type { Ticket, Comment, CreateComment, RichTextContent, TicketStatus, ClosingCommentsResponse, FileAttachment } from '../../../src/app/shared/types';
 import { createEmptyRichText, convertLegacyContent } from '../../../src/lib/utils';
 
 export default function TicketDetailPage() {
@@ -22,6 +22,8 @@ export default function TicketDetailPage() {
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
+  const [loadingAttachments, setLoadingAttachments] = useState(false);
   const [newComment, setNewComment] = useState<RichTextContent>(createEmptyRichText());
   const [submittingComment, setSubmittingComment] = useState(false);
   
@@ -61,6 +63,18 @@ export default function TicketDetailPage() {
       ]);
       setTicket(ticketData);
       setComments(commentsData);
+      
+      // ENHANCEMENT L2 FILE ATTACHMENTS - Fetch file attachments
+      try {
+        setLoadingAttachments(true);
+        const attachmentsData = await filesApi.getTicketFiles(ticketId);
+        setAttachments(attachmentsData);
+      } catch (error) {
+        console.error('Failed to fetch file attachments:', error);
+        setAttachments([]);
+      } finally {
+        setLoadingAttachments(false);
+      }
       
       // ENHANCEMENT L1 AI TICKET SUMMARY - Initialize summary state from ticket data
       if (ticketData.aiSummary) {
@@ -163,6 +177,24 @@ export default function TicketDetailPage() {
 
   // Check if current user can modify this ticket (agent assigned to it)
   const canModifyTicket = user?.role === 'agent' && ticket?.agentInfo?.id === user.id;
+
+  // ENHANCEMENT L2 FILE ATTACHMENTS - File download handler
+  const handleDownloadFile = async (fileId: string, filename: string) => {
+    try {
+      const blob = await filesApi.download(fileId);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download file:', error);
+      alert('Failed to download file. Please try again.');
+    }
+  };
 
   // ENHANCEMENT L1 AI CLOSING SUGGESTIONS - Generate closing suggestions function
   const handleGenerateClosingSuggestions = async () => {
@@ -581,6 +613,85 @@ export default function TicketDetailPage() {
                     />
                   </div>
                 </div>
+
+                {/* ENHANCEMENT L2 FILE ATTACHMENTS - File Attachments Section */}
+                {(attachments.length > 0 || loadingAttachments) && (
+                  <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <div className="flex items-center mb-3">
+                      <Paperclip className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                      <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        File Attachments ({attachments.length})
+                      </h4>
+                    </div>
+                    
+                    {loadingAttachments ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600"></div>
+                        <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Loading attachments...</span>
+                      </div>
+                    ) : attachments.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {attachments.map((file) => (
+                          <div
+                            key={file.id}
+                            className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-sm transition-shadow"
+                          >
+                            <div className="flex items-center space-x-3 min-w-0 flex-1">
+                              <div className="flex-shrink-0">
+                                {file.content_type.startsWith('image/') ? (
+                                  <div className="h-8 w-8 bg-green-100 dark:bg-green-900/20 rounded flex items-center justify-center">
+                                    <span className="text-green-600 dark:text-green-400 text-xs">IMG</span>
+                                  </div>
+                                ) : file.content_type === 'application/pdf' ? (
+                                  <div className="h-8 w-8 bg-red-100 dark:bg-red-900/20 rounded flex items-center justify-center">
+                                    <span className="text-red-600 dark:text-red-400 text-xs">PDF</span>
+                                  </div>
+                                ) : (
+                                  <div className="h-8 w-8 bg-blue-100 dark:bg-blue-900/20 rounded flex items-center justify-center">
+                                    <span className="text-blue-600 dark:text-blue-400 text-xs">DOC</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                  {file.filename}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {filesApi.formatFileSize(file.size)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-1 ml-2">
+                              {file.content_type.startsWith('image/') && (
+                                <Button
+                                  size="xs"
+                                  color="gray"
+                                  onClick={() => window.open(file.url, '_blank')}
+                                  title="Preview image"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                              )}
+                              <Button
+                                size="xs"
+                                className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500 text-white"
+                                onClick={() => handleDownloadFile(file.id, file.filename)}
+                                title="Download file"
+                              >
+                                <Download className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                        <Paperclip className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No attachments found</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Comments Section */}

@@ -5,6 +5,7 @@ export * from './category';
 export * from './subcategory';
 export * from './article';
 export * from './api';
+export * from './file';
 
 // Legacy exports for backward compatibility (these should be updated over time)
 export type { Category } from './category';

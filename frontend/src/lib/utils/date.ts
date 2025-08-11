@@ -1,4 +1,4 @@
-import { format, parseISO, formatDistanceToNow, differenceInHours, addBusinessDays, isWeekend, differenceInBusinessDays } from 'date-fns';
+import { format, parseISO, formatDistanceToNow, differenceInHours, addBusinessDays, differenceInBusinessDays } from 'date-fns';
 
 export const formatDate = (date: string | Date): string => {
   if (!date) return 'N/A';

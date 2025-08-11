@@ -5,8 +5,10 @@ from src.models.user import User
 from src.models.enums import TicketStatus
 from src.schemas.ticket import TicketCreate, TicketUpdate, TicketResponse
 from src.schemas.comment import CommentCreate, CommentResponse
+from src.schemas.file import AttachFilesRequest, FileAttachmentResponse
 from src.services.ticket_service import TicketService
 from src.services.comment_service import CommentService
+from src.services.file_service import file_service
 from src.utils.security import get_current_user, get_current_agent_user
 from pydantic import BaseModel
 
@@ -140,6 +142,49 @@ async def get_ticket_comments(ticket_id: PydanticObjectId):
 async def create_ticket_comment(ticket_id: PydanticObjectId, comment_data: CommentCreate, current_user: User = Depends(get_current_user)):
     """Create a new comment for a specific ticket"""
     return await CommentService.create_comment(comment_data, ticket_id, current_user)
+
+
+# File attachment routes within ticket context
+@router.get("/{ticket_id}/files", response_model=List[FileAttachmentResponse])
+async def get_ticket_files(ticket_id: PydanticObjectId, current_user: User = Depends(get_current_user)):
+    """Get all files attached to a specific ticket"""
+    # Check access permissions
+    if not await TicketService.can_access_ticket(ticket_id, current_user):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return await file_service.get_ticket_attachments(str(ticket_id))
+
+
+@router.post("/{ticket_id}/files", response_model=List[FileAttachmentResponse])
+async def attach_files_to_ticket(
+    ticket_id: PydanticObjectId, 
+    request: AttachFilesRequest, 
+    current_user: User = Depends(get_current_user)
+):
+    """Attach existing files to a ticket"""
+    # Check access permissions
+    if not await TicketService.can_access_ticket(ticket_id, current_user):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return await file_service.attach_files_to_ticket(str(ticket_id), request.file_ids, str(current_user.id))
+
+
+@router.delete("/{ticket_id}/files/{file_id}")
+async def detach_file_from_ticket(
+    ticket_id: PydanticObjectId, 
+    file_id: str, 
+    current_user: User = Depends(get_current_user)
+):
+    """Detach a file from a ticket"""
+    # Check access permissions  
+    if not await TicketService.can_access_ticket(ticket_id, current_user):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    success = await file_service.detach_file_from_ticket(str(ticket_id), file_id, str(current_user.id))
+    if not success:
+        raise HTTPException(status_code=404, detail="File attachment not found")
+    
+    return {"message": "File detached from ticket successfully"}
 
 
 
