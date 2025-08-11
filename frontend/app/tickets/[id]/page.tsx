@@ -164,8 +164,6 @@ export default function TicketDetailPage() {
   // Check if current user can modify this ticket (agent assigned to it)
   const canModifyTicket = user?.role === 'agent' && ticket?.agentInfo?.id === user.id;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
   // ENHANCEMENT L1 AI CLOSING SUGGESTIONS - Generate closing suggestions function
   const handleGenerateClosingSuggestions = async () => {
     if (!ticketId) return;
