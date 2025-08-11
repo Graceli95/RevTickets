@@ -103,4 +103,13 @@ export const ticketsApi = {
   async generateClosingComments(ticketId: string): Promise<ClosingCommentsResponse> {
     return apiClient.get(API_ENDPOINTS.TICKETS.CLOSING_COMMENTS(ticketId));
   },
+
+  // ENHANCEMENT L1 TICKET REOPENING - Reopen ticket functionality
+  async canReopen(ticketId: string): Promise<{ canReopen: boolean; reason?: string }> {
+    return apiClient.get(API_ENDPOINTS.TICKETS.CAN_REOPEN(ticketId));
+  },
+
+  async reopenTicket(ticketId: string): Promise<Ticket> {
+    return apiClient.post(API_ENDPOINTS.TICKETS.REOPEN(ticketId));
+  },
 };

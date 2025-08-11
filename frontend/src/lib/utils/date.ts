@@ -1,4 +1,4 @@
-import { format, parseISO, formatDistanceToNow, differenceInHours } from 'date-fns';
+import { format, parseISO, formatDistanceToNow, differenceInHours, addBusinessDays, isWeekend, differenceInBusinessDays } from 'date-fns';
 
 export const formatDate = (date: string | Date): string => {
   if (!date) return 'N/A';
@@ -81,6 +81,22 @@ export const canEditComment = (createdAt: string | Date, currentUserId: string, 
   }
 };
 
+// ENHANCEMENT L1 TICKET REOPENING - Business day calculations
+export const canReopenTicket = (closedAt: string | Date): boolean => {
+  try {
+    const closedDate = typeof closedAt === 'string' ? parseISO(closedAt) : closedAt;
+    if (isNaN(closedDate.getTime())) return false;
+
+    const now = new Date();
+    const businessDaysSinceClosure = differenceInBusinessDays(now, closedDate);
+    
+    return businessDaysSinceClosure <= 10;
+  } catch (error) {
+    console.error('Reopen validation error:', error);
+    return false;
+  }
+};
+
 export const getEditTimeRemaining = (createdAt: string | Date): string => {
   try {
     // Parse the UTC timestamp correctly
@@ -103,5 +119,43 @@ export const getEditTimeRemaining = (createdAt: string | Date): string => {
   } catch (error) {
     console.error('Edit time calculation error:', error);
     return '';
+  }
+};
+
+export const getReopenTimeRemaining = (closedAt: string | Date): string => {
+  try {
+    const closedDate = typeof closedAt === 'string' ? parseISO(closedAt) : closedAt;
+    if (isNaN(closedDate.getTime())) return '';
+
+    const now = new Date();
+    const businessDaysSinceClosure = differenceInBusinessDays(now, closedDate);
+    const businessDaysRemaining = 10 - businessDaysSinceClosure;
+    
+    if (businessDaysRemaining <= 0) return '';
+    
+    // Calculate the exact deadline (10 business days from closure)
+    const deadline = addBusinessDays(closedDate, 10);
+    
+    if (businessDaysRemaining === 1) {
+      return `Last day to reopen (until ${format(deadline, 'MMM dd')})`;
+    } else {
+      return `${businessDaysRemaining} business days left to reopen (until ${format(deadline, 'MMM dd')})`;
+    }
+  } catch (error) {
+    console.error('Reopen time calculation error:', error);
+    return '';
+  }
+};
+
+export const formatBusinessDaysFromNow = (date: string | Date, days: number): string => {
+  try {
+    const startDate = typeof date === 'string' ? parseISO(date) : date;
+    if (isNaN(startDate.getTime())) return 'Invalid date';
+    
+    const endDate = addBusinessDays(startDate, days);
+    return format(endDate, 'MMM dd, yyyy');
+  } catch (error) {
+    console.error('Business day formatting error:', error);
+    return 'Invalid date';
   }
 };
