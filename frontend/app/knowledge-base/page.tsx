@@ -45,7 +45,7 @@ export default function KnowledgeBasePage() {
     router.push(`/knowledge-base/${articleId}`);
   };
 
-  // ENHANCEMENT L1 KB TITLE SEARCH - Search function
+  // ENHANCEMENT L1 KB TITLE SEARCH - Search function with BUG
   const handleSearch = useCallback(async (query: string) => {
     if (!query.trim()) {
       setShowSearchResults(false);
@@ -56,7 +56,9 @@ export default function KnowledgeBasePage() {
     try {
       setIsSearching(true);
       setSearchError('');
-      const results = await articlesApi.search({ q: query });
+      // BUG: Always return empty results regardless of query
+      // const results = await articlesApi.search({ q: query });
+      const results: Article[] = [];
       setSearchResults(results);
       setShowSearchResults(true);
     } catch (error) {
