@@ -1,8 +1,12 @@
 /**
+ * ENHANCEMENT L2: FILE ATTACHMENTS
+ * 
  * File validation utilities for enhanced security
+ * Provides comprehensive client-side validation for file uploads
+ * including type checking, size limits, and security validation
  */
 
-// File type configurations with MIME types and extensions
+// ENHANCEMENT L2: FILE ATTACHMENTS - Allowed file types configuration
 export const ALLOWED_FILE_TYPES = [
   'image/jpeg',
   'image/png', 

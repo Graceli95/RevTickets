@@ -1,3 +1,10 @@
+/**
+ * ENHANCEMENT L2: FILE ATTACHMENTS
+ * 
+ * File upload component with drag-and-drop functionality
+ * Provides secure file validation, progress tracking, and visual feedback
+ */
+
 'use client';
 
 import React, { useState, useRef, useCallback } from 'react';
@@ -17,7 +24,7 @@ export function FileUpload({ attachments, onAttachmentsChange, disabled = false,
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Enhanced validation using security utilities
+  // ENHANCEMENT L2: FILE ATTACHMENTS - Enhanced validation with security checks
   const validateFileSecurely = useCallback((file: File): string | null => {
     const result = validateFile(file);
     if (!result.isValid) {
@@ -56,7 +63,6 @@ export function FileUpload({ attachments, onAttachmentsChange, disabled = false,
           name: file.name,
           size: file.size,
           type: file.type,
-          uploadProgress: 0,
           uploaded: false,
         });
       }
@@ -190,8 +196,8 @@ export function FileUpload({ attachments, onAttachmentsChange, disabled = false,
                       {formatFileSize(attachment.size)}
                     </p>
                     
-                    {/* Upload Progress */}
-                    {typeof attachment.uploadProgress === 'number' && attachment.uploadProgress < 100 && (
+                    {/* Upload Progress - Only show when actively uploading */}
+                    {typeof attachment.uploadProgress === 'number' && !attachment.uploaded && (
                       <div className="mt-1">
                         <div className="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
                           <div 

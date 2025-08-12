@@ -1,23 +1,29 @@
+"""
+ENHANCEMENT L2: FILE ATTACHMENTS
+
+File service for secure upload, download, and attachment management
+Provides GridFS-based storage with comprehensive security validation
+"""
+
 import hashlib
 import io
-import mimetypes
 import os
 from datetime import datetime
-from typing import List, Optional, BinaryIO
+from typing import List, Optional
 from bson import ObjectId
 from fastapi import HTTPException, UploadFile
-from gridfs import GridFS
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
-from pymongo.errors import PyMongoError
 
-from ..core.config import settings
 from ..db.init_db import get_database
 from ..models.file import FileDocument, TicketFileAttachment
-from ..schemas.file import FileUploadResponse, FileAttachmentResponse, FileValidationError
+from ..schemas.file import FileUploadResponse, FileAttachmentResponse
 
 
 class FileValidationService:
-    """Service for file validation and security checks"""
+    """
+    ENHANCEMENT L2: FILE ATTACHMENTS - Service for file validation and security checks
+    Provides comprehensive validation for file uploads including type, size, and security checks
+    """
     
     ALLOWED_MIME_TYPES = {
         'image/jpeg', 'image/png', 'image/gif', 'image/webp',
@@ -116,13 +122,19 @@ class FileValidationService:
 
 
 class FileService:
-    """Service for managing file uploads and storage using GridFS"""
+    """
+    ENHANCEMENT L2: FILE ATTACHMENTS - Service for managing file uploads and storage using GridFS
+    Handles secure file upload, download, and ticket attachment operations
+    """
     
     def __init__(self):
         self.validation_service = FileValidationService()
     
     async def upload_file(self, file: UploadFile, user_id: str) -> FileUploadResponse:
-        """Upload a single file to GridFS"""
+        """
+        ENHANCEMENT L2: FILE ATTACHMENTS - Upload a single file to GridFS
+        Validates file, stores in GridFS, and creates metadata document
+        """
         
         # Validate file
         validation_error = self.validation_service.validate_file(file)
@@ -189,38 +201,11 @@ class FileService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
     
-    async def upload_multiple_files(self, files: List[UploadFile], user_id: str) -> dict:
-        """Upload multiple files and return results"""
-        successful_uploads = []
-        failed_uploads = []
-        
-        for file in files:
-            try:
-                result = await self.upload_file(file, user_id)
-                successful_uploads.append(result)
-            except HTTPException as e:
-                failed_uploads.append(FileValidationError(
-                    filename=file.filename or "unknown",
-                    error=e.detail,
-                    error_code="VALIDATION_ERROR"
-                ))
-            except Exception as e:
-                failed_uploads.append(FileValidationError(
-                    filename=file.filename or "unknown",
-                    error=str(e),
-                    error_code="UPLOAD_ERROR"
-                ))
-        
-        return {
-            "successful_uploads": successful_uploads,
-            "failed_uploads": failed_uploads,
-            "total_files": len(files),
-            "successful_count": len(successful_uploads),
-            "failed_count": len(failed_uploads)
-        }
-    
     async def get_file(self, file_id: str, user_id: str = None) -> tuple[bytes, FileDocument]:
-        """Retrieve file content and metadata"""
+        """
+        ENHANCEMENT L2: FILE ATTACHMENTS - Retrieve file content and metadata
+        Used for both download and preview functionality with authentication
+        """
         
         try:
             db = await get_database()
@@ -259,48 +244,11 @@ class FileService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to retrieve file: {str(e)}")
     
-    async def delete_file(self, file_id: str, user_id: str) -> bool:
-        """Delete file and its metadata"""
-        
-        try:
-            db = await get_database()
-            files_collection = db.file_metadata
-            
-            # Get file metadata
-            file_doc_data = await files_collection.find_one({"_id": ObjectId(file_id)})
-            if not file_doc_data:
-                raise HTTPException(status_code=404, detail="File not found")
-            
-            # Convert ObjectId to string for Pydantic model
-            if file_doc_data.get("_id"):
-                file_doc_data["_id"] = str(file_doc_data["_id"])
-            
-            file_doc = FileDocument(**file_doc_data)
-            
-            # Check permissions
-            if file_doc.uploaded_by != user_id:
-                raise HTTPException(status_code=403, detail="Access denied")
-            
-            # Delete from GridFS
-            fs_bucket = AsyncIOMotorGridFSBucket(db, bucket_name="files")
-            await fs_bucket.delete(file_doc.gridfs_id)
-            
-            # Delete metadata
-            await files_collection.delete_one({"_id": ObjectId(file_id)})
-            
-            # Remove from ticket attachments
-            attachments_collection = db.ticket_file_attachments
-            await attachments_collection.delete_many({"file_id": file_id})
-            
-            return True
-            
-        except HTTPException:
-            raise
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to delete file: {str(e)}")
-    
     async def attach_files_to_ticket(self, ticket_id: str, file_ids: List[str], user_id: str) -> List[FileAttachmentResponse]:
-        """Attach files to a ticket"""
+        """
+        ENHANCEMENT L2: FILE ATTACHMENTS - Attach files to a ticket
+        Links uploaded files to a specific ticket for organization
+        """
         
         try:
             db = await get_database()
@@ -359,7 +307,10 @@ class FileService:
             raise HTTPException(status_code=500, detail=f"Failed to attach files: {str(e)}")
     
     async def get_ticket_attachments(self, ticket_id: str) -> List[FileAttachmentResponse]:
-        """Get all files attached to a ticket"""
+        """
+        ENHANCEMENT L2: FILE ATTACHMENTS - Get all files attached to a ticket
+        Retrieves file metadata for display in ticket view
+        """
         
         try:
             db = await get_database()
@@ -394,46 +345,32 @@ class FileService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to get attachments: {str(e)}")
     
-    async def detach_file_from_ticket(self, ticket_id: str, file_id: str, user_id: str) -> bool:
-        """Detach a file from a ticket"""
-        
-        try:
-            db = await get_database()
-            attachments_collection = db.ticket_file_attachments
-            
-            result = await attachments_collection.delete_one({
-                "ticket_id": ticket_id,
-                "file_id": file_id
-            })
-            
-            return result.deleted_count > 0
-            
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to detach file: {str(e)}")
-    
     async def _user_has_file_access(self, file_id: str, user_id: str) -> bool:
-        """Check if user has access to file through ticket attachments"""
+        """
+        ENHANCEMENT L2: FILE ATTACHMENTS - Check if user has access to file through ticket attachments
+        Used for permission validation when accessing files
+        """
         
         try:
             db = await get_database()
             attachments_collection = db.ticket_file_attachments
             tickets_collection = db.tickets
             
-            # Find tickets with this file attached
+            # Find all tickets that have this file attached
             attachments_cursor = attachments_collection.find({"file_id": file_id})
             attachments = await attachments_cursor.to_list(length=None)
             
             for attachment in attachments:
-                # Check if user has access to the ticket
+                # Check if user has access to the ticket (is creator or assignee)
                 ticket = await tickets_collection.find_one({"_id": ObjectId(attachment["ticket_id"])})
-                if ticket and (ticket.get("created_by") == user_id or ticket.get("assigned_to") == user_id):
-                    return True
+                if ticket:
+                    if ticket.get("created_by") == user_id or ticket.get("assigned_to") == user_id:
+                        return True
             
             return False
             
         except Exception:
             return False
-
-
-# Global instance
+    
+# ENHANCEMENT L2: FILE ATTACHMENTS - Global file service instance
 file_service = FileService()

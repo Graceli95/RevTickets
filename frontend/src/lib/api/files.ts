@@ -1,16 +1,24 @@
+/**
+ * ENHANCEMENT L2: FILE ATTACHMENTS
+ * 
+ * File API service for uploading, downloading, and managing file attachments
+ * Supports secure file handling with JWT authentication and progress tracking
+ */
+
 import { apiClient } from './client';
 import { API_ENDPOINTS } from '../../constants/api';
 import type { FileAttachment, FileUploadResponse } from '../../app/shared/types';
 
 export const filesApi = {
   /**
-   * Upload a single file
+   * ENHANCEMENT L2: FILE ATTACHMENTS - Upload a single file with progress tracking
+   * Uses XMLHttpRequest for progress tracking during file upload
    */
   async upload(file: File, onProgress?: (progress: number) => void): Promise<FileUploadResponse> {
     const formData = new FormData();
     formData.append('file', file);
 
-    // Create XMLHttpRequest for progress tracking
+    // Use XMLHttpRequest for progress tracking (fetch API doesn't support upload progress)
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
 
@@ -45,9 +53,10 @@ export const filesApi = {
         reject(new Error('Upload aborted'));
       });
 
+      // IMPORTANT: Must call xhr.open() before setting headers
       xhr.open('POST', `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1'}/files/upload`);
       
-      // Get auth token for authorization (must be set after xhr.open())
+      // Set authentication header after xhr.open()
       const token = localStorage.getItem('authToken');
       if (token) {
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
@@ -58,28 +67,8 @@ export const filesApi = {
   },
 
   /**
-   * Upload multiple files
-   */
-  async uploadMultiple(
-    files: File[], 
-    onProgress?: (fileIndex: number, progress: number) => void
-  ): Promise<FileUploadResponse[]> {
-    const uploadPromises = files.map((file, index) => 
-      this.upload(file, onProgress ? (progress) => onProgress(index, progress) : undefined)
-    );
-
-    return Promise.all(uploadPromises);
-  },
-
-  /**
-   * Get file details by ID
-   */
-  async getById(fileId: string): Promise<FileAttachment> {
-    return apiClient.get(API_ENDPOINTS.FILES.BY_ID(fileId));
-  },
-
-  /**
-   * Download file by ID
+   * ENHANCEMENT L2: FILE ATTACHMENTS - Download file with authentication
+   * Fetches file as blob for both download and preview functionality
    */
   async download(fileId: string): Promise<Blob> {
     const token = localStorage.getItem('authToken');
@@ -102,73 +91,22 @@ export const filesApi = {
   },
 
   /**
-   * Delete file by ID
-   */
-  async delete(fileId: string): Promise<void> {
-    await apiClient.delete(API_ENDPOINTS.FILES.DELETE(fileId));
-  },
-
-  /**
-   * Get files attached to a ticket
+   * ENHANCEMENT L2: FILE ATTACHMENTS - Get files attached to a ticket
    */
   async getTicketFiles(ticketId: string): Promise<FileAttachment[]> {
     return apiClient.get(API_ENDPOINTS.FILES.GET_TICKET_FILES(ticketId));
   },
 
   /**
-   * Attach files to a ticket
+   * ENHANCEMENT L2: FILE ATTACHMENTS - Attach files to a ticket
    */
   async attachToTicket(ticketId: string, fileIds: string[]): Promise<void> {
     await apiClient.post(API_ENDPOINTS.FILES.ATTACH_TO_TICKET(ticketId), { file_ids: fileIds });
   },
 
   /**
-   * Detach file from ticket
-   */
-  async detachFromTicket(ticketId: string, fileId: string): Promise<void> {
-    await apiClient.delete(API_ENDPOINTS.FILES.DETACH_FROM_TICKET(ticketId, fileId));
-  },
-
-  /**
-   * Validate file before upload
-   */
-  validateFile(file: File): { isValid: boolean; error?: string } {
-    const ALLOWED_TYPES = [
-      'image/jpeg',
-      'image/png', 
-      'image/gif',
-      'image/webp',
-      'application/pdf',
-      'text/plain',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/json',
-      'text/csv'
-    ];
-
-    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return {
-        isValid: false,
-        error: `File type "${file.type}" is not allowed. Allowed types: images, PDF, documents, text files.`
-      };
-    }
-
-    if (file.size > MAX_SIZE) {
-      return {
-        isValid: false,
-        error: `File size (${this.formatFileSize(file.size)}) exceeds maximum allowed size of ${this.formatFileSize(MAX_SIZE)}.`
-      };
-    }
-
-    return { isValid: true };
-  },
-
-  /**
-   * Format file size for display
+   * ENHANCEMENT L2: FILE ATTACHMENTS - Format file size for display
+   * Used in file lists and preview modals
    */
   formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 Bytes';
@@ -176,31 +114,5 @@ export const filesApi = {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  },
-
-  /**
-   * Get file icon based on MIME type
-   */
-  getFileIcon(mimeType: string): string {
-    if (mimeType.startsWith('image/')) return '🖼️';
-    if (mimeType === 'application/pdf') return '📄';
-    if (mimeType.includes('word')) return '📝';
-    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📊';
-    if (mimeType.startsWith('text/')) return '📄';
-    return '📁';
-  },
-
-  /**
-   * Create download URL for a file
-   */
-  getDownloadUrl(fileId: string): string {
-    return `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1'}${API_ENDPOINTS.FILES.DOWNLOAD(fileId)}`;
-  },
-
-  /**
-   * Create preview URL for images
-   */
-  getPreviewUrl(fileId: string): string {
-    return `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1'}${API_ENDPOINTS.FILES.PREVIEW(fileId)}`;
   }
 };

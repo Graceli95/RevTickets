@@ -1,3 +1,10 @@
+"""
+ENHANCEMENT L2: FILE ATTACHMENTS
+
+MongoDB document models for file storage and ticket-file relationships
+Uses GridFS for efficient file storage and metadata management
+"""
+
 from datetime import datetime
 from typing import Optional
 from bson import ObjectId
@@ -5,7 +12,10 @@ from pydantic import BaseModel, Field, ConfigDict
 
 
 class FileDocument(BaseModel):
-    """File document model for GridFS metadata"""
+    """
+    ENHANCEMENT L2: FILE ATTACHMENTS - File document model for GridFS metadata
+    Stores file information and links to GridFS stored content
+    """
     model_config = ConfigDict(
         populate_by_name=True,
         arbitrary_types_allowed=True,
@@ -28,7 +38,10 @@ class FileDocument(BaseModel):
 
 
 class TicketFileAttachment(BaseModel):
-    """Model for ticket-file relationships"""
+    """
+    ENHANCEMENT L2: FILE ATTACHMENTS - Model for ticket-file relationships
+    Links uploaded files to specific tickets
+    """
     model_config = ConfigDict(
         populate_by_name=True,
         arbitrary_types_allowed=True,

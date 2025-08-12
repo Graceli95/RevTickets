@@ -114,7 +114,7 @@ export function CreateTicketForm() {
     try {
       setSubmitting(true);
       
-      // First, upload any pending file attachments
+      // ENHANCEMENT L2: FILE ATTACHMENTS - Upload files before creating ticket
       const uploadedFiles: string[] = [];
       let uploadFailed = false;
       
@@ -122,9 +122,9 @@ export function CreateTicketForm() {
         const attachment = attachments[i];
         if (attachment.file && !attachment.uploaded) {
           try {
-            // Update progress
+            // Clear any previous errors and mark as starting upload
             setAttachments(prev => prev.map((att, index) => 
-              index === i ? { ...att, uploadProgress: 0, uploadError: undefined } : att
+              index === i ? { ...att, uploadError: undefined } : att
             ));
 
             const uploadResponse = await filesApi.upload(attachment.file, (progress) => {
@@ -173,7 +173,7 @@ export function CreateTicketForm() {
 
         const ticket = await ticketsApi.create(ticketData);
         
-        // Attach files to the ticket if any were uploaded
+        // ENHANCEMENT L2: FILE ATTACHMENTS - Attach uploaded files to the ticket
         if (uploadedFiles.length > 0) {
           try {
             await filesApi.attachToTicket(ticket.id, uploadedFiles);

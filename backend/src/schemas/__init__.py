@@ -6,18 +6,12 @@ This package contains all API request/response schemas.
 
 from .file import (
     FileUploadResponse, 
-    FileMetadata,
     AttachFilesRequest,
-    FileAttachmentResponse,
-    FileValidationError,
-    BulkUploadResponse
+    FileAttachmentResponse
 )
 
 __all__ = [
     'FileUploadResponse',
-    'FileMetadata', 
     'AttachFilesRequest',
-    'FileAttachmentResponse',
-    'FileValidationError',
-    'BulkUploadResponse'
+    'FileAttachmentResponse'
 ]

@@ -70,7 +70,7 @@ export default function TicketDetailPage() {
       setTicket(ticketData);
       setComments(commentsData);
       
-      // ENHANCEMENT L2 FILE ATTACHMENTS - Fetch file attachments
+      // ENHANCEMENT L2: FILE ATTACHMENTS - Fetch file attachments for the ticket
       try {
         setLoadingAttachments(true);
         const attachmentsData = await filesApi.getTicketFiles(ticketId);
@@ -193,7 +193,7 @@ export default function TicketDetailPage() {
   // Check if current user can modify this ticket (agent assigned to it)
   const canModifyTicket = user?.role === 'agent' && ticket?.agentInfo?.id === user.id;
 
-  // ENHANCEMENT L2 FILE ATTACHMENTS - File download handler
+  // ENHANCEMENT L2: FILE ATTACHMENTS - File download handler
   const handleDownloadFile = async (fileId: string, filename: string) => {
     try {
       const blob = await filesApi.download(fileId);
@@ -211,7 +211,7 @@ export default function TicketDetailPage() {
     }
   };
 
-  // ENHANCEMENT L2 FILE ATTACHMENTS - File preview handler
+  // ENHANCEMENT L2: FILE ATTACHMENTS - Secure file preview with authentication
   const handlePreviewFile = async (file: FileAttachment) => {
     setPreviewFile(file);
     setShowPreview(true);
@@ -659,7 +659,7 @@ export default function TicketDetailPage() {
                   </div>
                 </div>
 
-                {/* ENHANCEMENT L2 FILE ATTACHMENTS - File Attachments Section */}
+                {/* ENHANCEMENT L2: FILE ATTACHMENTS - File Attachments Section */}
                 {(attachments.length > 0 || loadingAttachments) && (
                   <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
                     <div className="flex items-center mb-3">
@@ -1151,7 +1151,7 @@ export default function TicketDetailPage() {
           </div>
         </div>
 
-        {/* ENHANCEMENT L2 FILE ATTACHMENTS - File Preview Modal */}
+        {/* ENHANCEMENT L2: FILE ATTACHMENTS - Inline File Preview Modal */}
         {showPreview && previewFile && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
