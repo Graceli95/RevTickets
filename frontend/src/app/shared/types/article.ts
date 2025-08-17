@@ -14,6 +14,7 @@ export interface Article {
   category: Category;
   subCategory: SubCategory;
   tags: Tag[];
+  aiGeneratedTags: string[];
   vectorIds: string[];
   createdAt: string;
   updatedAt: string;

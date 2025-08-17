@@ -2,10 +2,20 @@ from fastapi import APIRouter, HTTPException, Depends
 from src.schemas.article import ArticleCreate, ArticleUpdate, ArticleResponse
 from beanie import PydanticObjectId
 from src.services.article_service import ArticleService
+from src.services.ai_service import AIService
 from typing import List
 from src.utils.security import get_current_agent_user, get_current_user
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/articles", tags=["Articles"])
+
+# ENHANCEMENT L2 AI KB TAGS - Request models for tag generation
+class GenerateTagsRequest(BaseModel):
+    title: str
+    content: str
+
+class GenerateTagsResponse(BaseModel):
+    tags: List[str]
 
 # Agent-only routes (create, update, delete)
 @router.post("/", response_model=ArticleResponse, dependencies=[Depends(get_current_agent_user)])
@@ -51,3 +61,33 @@ async def get_article(article_id: str):
         return await ArticleService.get_article(article_id)
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+# ENHANCEMENT L2 AI KB TAGS - AI tag generation endpoints
+@router.post("/generate-tags", response_model=GenerateTagsResponse, dependencies=[Depends(get_current_agent_user)])
+async def generate_tags_from_content(request: GenerateTagsRequest):
+    """Generate AI tags from article title and content."""
+    try:
+        tags = await AIService.generate_article_tags(
+            title=request.title,
+            content=request.content
+        )
+        return GenerateTagsResponse(tags=tags)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/{article_id}/generate-tags", response_model=GenerateTagsResponse, dependencies=[Depends(get_current_agent_user)])
+async def generate_tags_from_article(article_id: str):
+    """Generate AI tags from existing article."""
+    try:
+        tags = await AIService.generate_article_tags(article_id=article_id)
+        return GenerateTagsResponse(tags=tags)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.put("/{article_id}/ai-tags", response_model=ArticleResponse, dependencies=[Depends(get_current_agent_user)])
+async def update_article_ai_tags(article_id: str, request: GenerateTagsResponse):
+    """Update article with AI-generated tags."""
+    try:
+        return await ArticleService.update_ai_tags(article_id, request.tags)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

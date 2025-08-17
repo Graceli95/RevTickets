@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Card, Label, TextInput, Select } from 'flowbite-react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Button, Card, Label, TextInput, Select, Badge } from 'flowbite-react';
+import { ArrowLeft, Save, Sparkles, X } from 'lucide-react';
 import { MainLayout, ProtectedRoute } from '../../../src/app/shared/components';
 import { LoadingSpinner } from '../../../src/app/shared/components';
 import { RichTextEditor } from '../../../src/app/shared/components/RichTextEditor';
@@ -23,6 +23,10 @@ export default function CreateArticlePage() {
   const [content, setContent] = useState<RichTextContent>(createEmptyRichText());
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState('');
+  
+  // ENHANCEMENT L2 AI KB TAGS - AI tag generation state
+  const [aiGeneratedTags, setAiGeneratedTags] = useState<string[]>([]);
+  const [generatingTags, setGeneratingTags] = useState(false);
   
   // Data state
   const [categories, setCategories] = useState<Category[]>([]);
@@ -64,6 +68,29 @@ export default function CreateArticlePage() {
     }
   }, [selectedCategoryId, subcategories, selectedSubcategoryId]);
 
+  // ENHANCEMENT L2 AI KB TAGS - Generate AI tags
+  const handleGenerateTags = async () => {
+    if (!title.trim() || !content.text.trim()) {
+      alert('Please enter a title and some content before generating tags');
+      return;
+    }
+
+    try {
+      setGeneratingTags(true);
+      const response = await articlesApi.generateTags(title.trim(), content.text);
+      setAiGeneratedTags(response.tags);
+    } catch (error) {
+      console.error('Failed to generate tags:', error);
+      alert('Failed to generate tags. Please try again.');
+    } finally {
+      setGeneratingTags(false);
+    }
+  };
+
+  const removeTag = (indexToRemove: number) => {
+    setAiGeneratedTags(aiGeneratedTags.filter((_, index) => index !== indexToRemove));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -83,6 +110,16 @@ export default function CreateArticlePage() {
       };
 
       const newArticle = await articlesApi.create(articleData);
+      
+      // ENHANCEMENT L2 AI KB TAGS - Save AI-generated tags if any
+      if (aiGeneratedTags.length > 0) {
+        try {
+          await articlesApi.updateAITags(newArticle.id, aiGeneratedTags);
+        } catch (error) {
+          console.error('Failed to save AI tags:', error);
+          // Don't block the redirect if tag saving fails
+        }
+      }
       
       // Redirect to the new article
       router.push(`/knowledge-base/${newArticle.id}`);
@@ -214,6 +251,67 @@ export default function CreateArticlePage() {
                     className="min-h-[400px]"
                   />
                 </div>
+              </div>
+
+              {/* ENHANCEMENT L2 AI KB TAGS - AI Tag Generation */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-medium">
+                    AI-Generated Tags
+                  </Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    color="gray"
+                    onClick={handleGenerateTags}
+                    disabled={generatingTags || !title.trim() || !content.text.trim()}
+                    className="flex items-center"
+                  >
+                    {generatingTags ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate Tags
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                {aiGeneratedTags.length > 0 && (
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      AI-generated tags based on your content. You can remove tags by clicking the X.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {aiGeneratedTags.map((tag, index) => (
+                        <Badge
+                          key={index}
+                          color="info"
+                          className="flex items-center gap-1 px-3 py-1"
+                        >
+                          <span>{tag}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeTag(index)}
+                            className="ml-1 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {aiGeneratedTags.length === 0 && (title.trim() || content.text.trim()) && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Generate AI tags to help categorize and make your article more discoverable.
+                  </p>
+                )}
               </div>
 
               {/* Actions */}

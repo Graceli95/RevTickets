@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Button, Card, Table, TableHead, TableHeadCell, TableRow, TableCell, TableBody, TextInput } from 'flowbite-react';
-import { Plus, BookOpen, Calendar, Search, X } from 'lucide-react';
+import { Button, Card, Table, TableHead, TableHeadCell, TableRow, TableCell, TableBody, TextInput, Badge, Tooltip } from 'flowbite-react';
+import { Plus, BookOpen, Calendar, Search, X, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { MainLayout, ProtectedRoute } from '../../src/app/shared/components';
@@ -89,6 +89,22 @@ export default function KnowledgeBasePage() {
     setSearchResults([]);
     setShowSearchResults(false);
     setSearchError('');
+  };
+
+  // ENHANCEMENT L2 AI KB TAGS - Helper function to check if article was found via AI tags
+  const wasFoundViaAITags = (article: Article, query: string): boolean => {
+    if (!article.aiGeneratedTags || !query.trim()) return false;
+    const lowerQuery = query.toLowerCase();
+    return article.aiGeneratedTags.some(tag => 
+      tag.toLowerCase().includes(lowerQuery) &&
+      !article.title.toLowerCase().includes(lowerQuery) &&
+      !getRichTextDisplay(article.content).toLowerCase().includes(lowerQuery)
+    );
+  };
+
+  // ENHANCEMENT L2 AI KB TAGS - Handle clicking on a tag to search for it
+  const handleTagClick = (tag: string) => {
+    setSearchQuery(tag);
   };
 
   // ENHANCEMENT L1 KB TITLE SEARCH - Show search results when searching, all articles otherwise
@@ -235,6 +251,49 @@ export default function KnowledgeBasePage() {
                             <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-md truncate">
                               {getRichTextDisplay(article.content).substring(0, 100)}...
                             </div>
+                            {/* ENHANCEMENT L2 AI KB TAGS - Show AI tags subtly */}
+                            {article.aiGeneratedTags && article.aiGeneratedTags.length > 0 && (
+                              <div className="flex items-center mt-2 space-x-1">
+                                <Sparkles className="h-3 w-3 text-blue-400" />
+                                {/* Show special indicator if found via AI tags */}
+                                {showSearchResults && wasFoundViaAITags(article, searchQuery) && (
+                                  <Badge color="success" size="xs" className="text-xs px-1 py-0 mr-1">
+                                    Found via AI tags
+                                  </Badge>
+                                )}
+                                <div className="flex space-x-1">
+                                  {article.aiGeneratedTags.slice(0, 3).map((tag, index) => {
+                                    const isMatchingTag = showSearchResults && 
+                                      tag.toLowerCase().includes(searchQuery.toLowerCase());
+                                    return (
+                                      <button
+                                        key={index}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleTagClick(tag);
+                                        }}
+                                        className="cursor-pointer"
+                                      >
+                                        <Badge 
+                                          color={isMatchingTag ? "warning" : "info"} 
+                                          size="xs" 
+                                          className="text-xs px-1 py-0 hover:opacity-80 transition-opacity"
+                                        >
+                                          {tag}
+                                        </Badge>
+                                      </button>
+                                    );
+                                  })}
+                                  {article.aiGeneratedTags.length > 3 && (
+                                    <Tooltip content={`All tags: ${article.aiGeneratedTags.join(', ')}`}>
+                                      <Badge color="gray" size="xs" className="text-xs px-1 py-0">
+                                        +{article.aiGeneratedTags.length - 3}
+                                      </Badge>
+                                    </Tooltip>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>

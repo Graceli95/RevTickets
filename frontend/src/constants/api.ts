@@ -63,6 +63,10 @@ export const API_ENDPOINTS = {
     BASE: '/articles',
     BY_ID: (id: string) => `/articles/${id}`,
     SEARCH: '/articles/search',
+    // ENHANCEMENT L2 AI KB TAGS - AI tag generation endpoints
+    GENERATE_TAGS: '/articles/generate-tags',
+    GENERATE_TAGS_FROM_ARTICLE: (id: string) => `/articles/${id}/generate-tags`,
+    UPDATE_AI_TAGS: (id: string) => `/articles/${id}/ai-tags`,
   },
   
   // ENHANCEMENT L2: FILE ATTACHMENTS - File API endpoints
