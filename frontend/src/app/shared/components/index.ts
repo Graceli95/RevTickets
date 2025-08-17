@@ -5,3 +5,5 @@ export * from './MainLayout';
 export * from './Sidebar';
 export * from './RichTextEditor';
 export * from './ProtectedRoute';
+// ENHANCEMENT L2 SLA AUTOMATION - Export SLA indicator component
+export * from './SLAIndicator';

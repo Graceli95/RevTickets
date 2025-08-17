@@ -60,6 +60,12 @@ class TicketResponse(BaseModel):
     ai_summary: Optional[str] = Field(None, description="AI-generated summary of the ticket")
     summary_generated_at: Optional[datetime] = Field(None, description="When the AI summary was generated")
 
+    # ENHANCEMENT L2 SLA AUTOMATION - Include SLA fields in response
+    sla_due_date: Optional[datetime] = Field(None, description="When SLA response is due", alias="slaDueDate")
+    sla_breached: Optional[bool] = Field(None, description="Whether SLA has been breached", alias="slaBreached")
+    sla_paused_at: Optional[datetime] = Field(None, description="When SLA was paused", alias="slaPausedAt")
+    sla_total_paused_time: Optional[int] = Field(None, description="Total minutes SLA has been paused", alias="slaTotalPausedTime")
+
     class Config:
         populate_by_name = True
 

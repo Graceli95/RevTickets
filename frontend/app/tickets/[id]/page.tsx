@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { Breadcrumb, BreadcrumbItem, Button, Avatar, Textarea } from 'flowbite-react';
 import { MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Brain, Sparkles, Edit, Save, X, Clock, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
-import { MainLayout, ProtectedRoute } from '../../../src/app/shared/components';
+import { MainLayout, ProtectedRoute, SLAIndicator } from '../../../src/app/shared/components';
 import { LoadingSpinner } from '../../../src/app/shared/components';
 import { RichTextEditor } from '../../../src/app/shared/components/RichTextEditor';
 import { ticketsApi } from '../../../src/lib/api';
@@ -991,6 +991,31 @@ export default function TicketDetailPage() {
                   </div>
                 </div>
               </div>
+
+              {/* ENHANCEMENT L2 SLA AUTOMATION - SLA Status Card (Agent Only) */}
+              {user?.role === 'agent' && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                      SLA Status
+                    </h3>
+                  </div>
+                  <div className="p-4">
+                    {ticket?.slaDueDate ? (
+                      <SLAIndicator
+                        slaDueDate={ticket.slaDueDate}
+                        slaBreached={ticket.slaBreached}
+                        ticketStatus={ticket.status}
+                        className="w-full"
+                      />
+                    ) : (
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        <p>No SLA information available for this ticket.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

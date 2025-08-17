@@ -2,7 +2,7 @@ services:
   mongo:
     image: mongo:6
     container_name: mongodb
-    restart: always
+    restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
@@ -11,12 +11,26 @@ services:
       MONGO_INITDB_DATABASE: rev-ticketing-system
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
+    command: ["mongod", "--auth", "--bind_ip_all", "--quiet"]
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "--quiet"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+  # ENHANCEMENT L2 SLA AUTOMATION - Redis for Celery message broker
+  redis:
+    image: redis:7-alpine
+    container_name: redis-broker
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
 
   backend:
     build:
@@ -28,8 +42,48 @@ services:
     environment:
       - MONGODB_URI=mongodb://root:example@mongo:27017/rev-ticketing-system?authSource=admin
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      # ENHANCEMENT L2 SLA AUTOMATION - Redis configuration for Celery
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ENHANCEMENT L2 SLA AUTOMATION - Celery worker for background tasks
+  celery-worker-task:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: celery-worker-task
+    command: celery -A src.tasks.sla_monitor worker --loglevel=info
+    environment:
+      - MONGODB_URI=mongodb://root:example@mongo:27017/rev-ticketing-system?authSource=admin
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ENHANCEMENT L2 SLA AUTOMATION - Celery beat for scheduled tasks
+  celery-beat-task:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: celery-beat-task
+    command: celery -A src.tasks.sla_monitor beat --loglevel=info
+    environment:
+      - MONGODB_URI=mongodb://root:example@mongo:27017/rev-ticketing-system?authSource=admin
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 

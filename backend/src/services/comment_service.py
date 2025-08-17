@@ -49,23 +49,59 @@ class CommentService:
         if not ticket:
             raise ValueError("Invalid ticket ID")
 
-        # Check if we need to update ticket status
+        # ENHANCEMENT L2 SLA AUTOMATION - Check if we need to update ticket status and trigger SLA logic
+        status_changed = False
+        
+        # ENHANCEMENT L2 SLA AUTOMATION - Handle status changes and SLA logic directly
+        old_status = ticket.status
+        new_status = None
+        
         # If a regular user (non-agent) responds to a ticket that's waiting for customer response,
-        # change status to waiting_for_agent
+        # change status to waiting_for_agent (this will resume SLA timer)
         if (current_user.role == "user" and 
             ticket.status == TicketStatus.waiting_for_customer):
             print(f"User {current_user.email} responding to ticket {ticket_id}, changing status from waiting_for_customer to waiting_for_agent")
-            ticket.status = TicketStatus.waiting_for_agent
-            ticket.updated_at = datetime.now(timezone.utc)
+            new_status = TicketStatus.waiting_for_agent
+            ticket.status = new_status
+            ticket.updated_at = datetime.utcnow()  # Use naive UTC datetime
+            status_changed = True
+            
+        # If an agent responds to a ticket that's waiting for agent response,
+        # change status to waiting_for_customer (this will pause SLA timer)
+        elif (current_user.role == "agent" and 
+              ticket.status == TicketStatus.waiting_for_agent):
+            print(f"Agent {current_user.email} responding to ticket {ticket_id}, changing status from waiting_for_agent to waiting_for_customer")
+            new_status = TicketStatus.waiting_for_customer
+            ticket.status = new_status
+            ticket.updated_at = datetime.utcnow()  # Use naive UTC datetime
+            status_changed = True
+            
+        # Save ticket with new status
+        if status_changed:
             await ticket.save()
+            
+            # ENHANCEMENT L2 SLA AUTOMATION - Handle SLA pause/resume logic
+            try:
+                from src.services.sla_service import SLAService
+                if new_status == TicketStatus.waiting_for_customer and old_status != TicketStatus.waiting_for_customer:
+                    # Agent responded, pause SLA timer
+                    await SLAService.pause_sla(ticket)
+                    print(f"SLA paused for ticket {ticket.id}: agent responded")
+                elif old_status == TicketStatus.waiting_for_customer and new_status != TicketStatus.waiting_for_customer:
+                    # Customer responded, resume SLA timer and extend due date
+                    await SLAService.resume_sla(ticket)
+                    print(f"SLA resumed for ticket {ticket.id}: customer responded, due date extended")
+            except Exception as e:
+                print(f"SLA pause/resume failed for ticket {ticket.id}: {e}")
+                # Don't fail comment creation if SLA logic fails
 
         # Create comment with automatically set fields
         comment = Comment(
             content=comment_data.content,
             user_id=current_user,  # Use current_user directly
             ticket=ticket,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.utcnow(),  # Use naive UTC datetime
+            updated_at=datetime.utcnow()   # Use naive UTC datetime
         )
         
         comment = await comment.insert()

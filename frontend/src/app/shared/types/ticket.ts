@@ -29,6 +29,11 @@ export interface Ticket {
   // ENHANCEMENT L1 AI TICKET SUMMARY - Add AI summary fields
   aiSummary?: string;
   summaryGeneratedAt?: string;
+  // ENHANCEMENT L2 SLA AUTOMATION - Add SLA fields
+  slaDueDate?: string;
+  slaBreached?: boolean;
+  slaPausedAt?: string;
+  slaTotalPausedTime?: number;
 }
 
 export interface UserInfo {
