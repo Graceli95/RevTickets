@@ -153,59 +153,26 @@ class TicketService:
         
         ticket = await ticket.insert()
         
-        # Try to auto-assign the ticket to an appropriate agent
+        # ENHANCEMENT L2 AI AGENT ASSIGNMENT - Use AI to intelligently assign the ticket
         try:
-            print(f"Attempting auto-assignment for ticket {ticket.id} in category {category.name}")
-            from src.models.agent_info import AgentInfo
+            print(f"Attempting AI-powered assignment for ticket {ticket.id} in category {category.name}")
+            from src.services.assignment_service import AssignmentService
             
-            # Find agents with matching category skills first
-            qualified_agents = await AgentInfo.find({"category.$id": category.id}).to_list()
-            print(f"Found {len(qualified_agents)} qualified agents for category {category.name}")
+            # Use AI assignment service to find the best agent
+            selected_agent = await AssignmentService.assign_ticket_to_agent(ticket)
             
-            assignment_type = "qualified"
-            
-            # If no qualified agents, get all agents as fallback
-            if not qualified_agents:
-                print(f"No skilled agents found for {category.name}, looking for any available agent")
-                all_agent_infos = await AgentInfo.find_all().to_list()
-                qualified_agents = all_agent_infos
-                assignment_type = "fallback"
-                print(f"Found {len(qualified_agents)} total agents as fallback")
-            
-            if qualified_agents:
-                # Simple round-robin assignment: find agent with least active tickets
-                best_agent = None
-                min_active_tickets = float('inf')
-                
-                for agent_info in qualified_agents:
-                    agent = await agent_info.user.fetch()
-                    # Count active tickets for this agent using Python filtering
-                    all_tickets = await Ticket.find_all().to_list()
-                    active_tickets = 0
-                    for ticket in all_tickets:
-                        if (ticket.agent_id and hasattr(ticket.agent_id, 'id') and 
-                            ticket.agent_id.id == agent.id and 
-                            ticket.status in [TicketStatus.new, TicketStatus.in_progress, TicketStatus.waiting_for_customer]):
-                            active_tickets += 1
-                    print(f"Agent {agent.email} has {active_tickets} active tickets")
-                    
-                    if active_tickets < min_active_tickets:
-                        min_active_tickets = active_tickets
-                        best_agent = agent
-                
-                if best_agent:
-                    print(f"Auto-assigning ticket {ticket.id} to {assignment_type} agent {best_agent.email}")
-                    ticket.agent_id = best_agent
-                    ticket.status = TicketStatus.in_progress
-                    await ticket.save()
-                    print(f"Successfully auto-assigned ticket {ticket.id} to {best_agent.email} ({assignment_type})")
-                else:
-                    print(f"No available agents found for auto-assignment")
+            if selected_agent:
+                print(f"AI assigned ticket {ticket.id} to agent {selected_agent.email}")
+                ticket.agent_id = selected_agent
+                ticket.status = TicketStatus.in_progress
+                await ticket.save()
+                print(f"Successfully AI-assigned ticket {ticket.id} to {selected_agent.email}")
             else:
-                print(f"No agents found in the system at all")
+                print(f"AI assignment could not find a suitable agent for ticket {ticket.id}")
+                
         except Exception as e:
-            print(f"Auto-assignment failed for ticket {ticket.id}: {e}")
-            # Don't fail the ticket creation if auto-assignment fails
+            print(f"AI assignment failed for ticket {ticket.id}: {e}")
+            # Don't fail the ticket creation if AI assignment fails
             pass
 
         # ENHANCEMENT L2 SLA AUTOMATION - Set SLA due date for new ticket
