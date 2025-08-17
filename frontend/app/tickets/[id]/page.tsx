@@ -430,8 +430,8 @@ export default function TicketDetailPage() {
 
               {/* Ticket Details Card */}
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                {/* Status and Priority Info */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                {/* Status, Priority, and Assignment Info */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                   <div>
                     <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">STATUS</div>
                     <div className="flex items-center space-x-2">
@@ -477,6 +477,33 @@ export default function TicketDetailPage() {
                       }`}>
                         {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
                       </span>
+                    </div>
+                  </div>
+                  {/* ENHANCEMENT L2 AI AGENT ASSIGNMENT - Assignment Information */}
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">ASSIGNMENT</div>
+                    <div className="flex items-center space-x-2">
+                      {ticket.agentInfo ? (
+                        <>
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                              {ticket.agentInfo.name || ticket.agentInfo.email}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                              <Brain className="h-3 w-3 mr-1" />
+                              AI Assigned
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                            Unassigned
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
