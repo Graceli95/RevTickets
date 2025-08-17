@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { Button, Breadcrumb, BreadcrumbItem } from 'flowbite-react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { Button, Breadcrumb, BreadcrumbItem, Alert } from 'flowbite-react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, BookOpen, Tag } from 'lucide-react';
+import { ArrowLeft, Calendar, BookOpen, Tag, Edit } from 'lucide-react';
 import { MainLayout, ProtectedRoute } from '../../../src/app/shared/components';
 import { LoadingSpinner } from '../../../src/app/shared/components';
 import { articlesApi } from '../../../src/lib/api';
@@ -15,10 +15,12 @@ import type { Article } from '../../../src/app/shared/types';
 export default function ArticleDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { } = useAuth();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const articleId = params.id as string;
 
@@ -41,6 +43,18 @@ export default function ArticleDetailPage() {
       fetchArticle();
     }
   }, [articleId]);
+
+  // Check for success message from edit page
+  useEffect(() => {
+    if (searchParams.get('updated') === 'true') {
+      setShowSuccessMessage(true);
+      // Auto-hide success message after 5 seconds
+      const timer = setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   const handleBack = () => {
     router.back();
@@ -82,6 +96,13 @@ export default function ArticleDetailPage() {
     <ProtectedRoute>
       <MainLayout>
         <div className="container mx-auto px-4 py-8 space-y-6">
+          {/* Success Message */}
+          {showSuccessMessage && (
+            <Alert color="success" onDismiss={() => setShowSuccessMessage(false)}>
+              <span className="font-medium">Article updated successfully!</span> Your changes have been saved.
+            </Alert>
+          )}
+
           {/* Breadcrumbs */}
           <Breadcrumb className="mb-4">
             <BreadcrumbItem>
@@ -98,6 +119,21 @@ export default function ArticleDetailPage() {
           <div className="max-w-4xl mx-auto">
             {/* Article Header */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-6">
+              {/* ENHANCEMENT L2 KB EDIT - Agent-only edit button */}
+              {user?.role === 'agent' && (
+                <div className="flex justify-end mb-4">
+                  <Button
+                    onClick={() => router.push(`/knowledge-base/${articleId}/edit`)}
+                    color="gray"
+                    size="sm"
+                    className="flex items-center"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Article
+                  </Button>
+                </div>
+              )}
+              
               <div className="text-center mb-8">
                 <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
                   {article.title}

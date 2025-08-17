@@ -47,12 +47,12 @@ def create_empty_rich_text() -> RichTextContent:
 def create_rich_text_from_html(html: str) -> RichTextContent:
     """Create RichTextContent from HTML string (for migration purposes)"""
     import re
-    # Simple HTML to text conversion for migration
+    # Simple HTML to text conversion for migration  
     text = re.sub(r'<[^>]+>', '', html).strip()
     
     return RichTextContent(
         html=html,
-        json={"type": "doc", "content": []},  # Will be populated by frontend editor
+        json={},  # Empty JSON will cause editor to use HTML content
         text=text
     )
 
