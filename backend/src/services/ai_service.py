@@ -1,5 +1,6 @@
 from src.langchain_app.chains.summarize_ticket_data import summarize_ticket_data
 from src.langchain_app.chains.generate_closing_comments import generate_closing_comments
+from src.langchain_app.chains.generate_tags import generate_tags_for_article
 from .ticket_service import TicketService
 from .comment_service import CommentService
 from src.schemas.summary import TicketSummaryResponse
@@ -124,3 +125,58 @@ class AIService:
                 comment=f"The issue reported in '{ticket.title}' has been addressed. Based on our analysis of the ticket and related discussions, the problem appears to be resolved. Please let us know if you experience any further issues."
             )
             return fallback_suggestion
+
+    # ENHANCEMENT L2 AI KB TAGS - Generate AI-powered tags for knowledge base articles
+    @staticmethod
+    async def generate_article_tags(article_id: str = None, title: str = None, content: str = None) -> list[str]:
+        """
+        Generate AI-powered tags for a knowledge base article.
+        
+        Args:
+            article_id: Optional article ID to fetch from database
+            title: Article title (required if article_id not provided)
+            content: Article content (required if article_id not provided)
+            
+        Returns:
+            List of generated tags
+        """
+        # If article_id is provided, fetch the article from database
+        if article_id:
+            from src.models.article import Article
+            try:
+                article_obj_id = PydanticObjectId(article_id)
+                article = await Article.get(article_obj_id)
+                if not article:
+                    raise HTTPException(status_code=404, detail="Article not found")
+                
+                title = article.title
+                # Extract plain text from rich content
+                if hasattr(article.content, 'text') and article.content.text:
+                    content = article.content.text
+                elif hasattr(article.content, 'html') and article.content.html:
+                    # Strip HTML tags to get plain text
+                    import re
+                    content = re.sub(r'<[^>]+>', '', article.content.html).strip()
+                else:
+                    # Last resort - try to extract text from any structure
+                    content_str = str(article.content)
+                    if 'text' in content_str and not content_str.startswith('{'):
+                        content = content_str
+                    else:
+                        content = "No readable content available"
+                    
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Invalid article ID: {str(e)}")
+        
+        # Validate required parameters
+        if not title or not content:
+            raise HTTPException(status_code=400, detail="Title and content are required")
+        
+        try:
+            # Generate tags using LangChain
+            tags = await generate_tags_for_article(title, content)
+            return tags
+        except Exception as e:
+            print(f"AI tag generation failed: {e}")
+            # Return empty list as fallback
+            return []

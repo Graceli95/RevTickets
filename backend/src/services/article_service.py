@@ -177,6 +177,7 @@ class ArticleService:
             category=category_response,
             subcategory=subcategory_response,
             tags=tag_bases,
+            ai_generated_tags=article.ai_generated_tags or [],
             vector_ids=article.vector_ids or [],
             created_at=article.created_at,
             updated_at=article.updated_at,
@@ -209,11 +210,12 @@ class ArticleService:
         # Create regex pattern for case-insensitive search in title and content
         search_pattern = re.compile(re.escape(query), re.IGNORECASE)
         
-        # Search in title and content fields
+        # ENHANCEMENT L2 AI KB TAGS - Search in title, content, and AI-generated tags
         search_filter = {
             "$or": [
                 {"title": {"$regex": search_pattern}},
-                {"content.text": {"$regex": search_pattern}}
+                {"content.text": {"$regex": search_pattern}},
+                {"ai_generated_tags": {"$regex": search_pattern}}
             ]
         }
         
@@ -226,3 +228,18 @@ class ArticleService:
         
         # Build responses
         return [await ArticleService._build_response(article) for article in articles]
+
+    # ENHANCEMENT L2 AI KB TAGS - Update article with AI-generated tags
+    @staticmethod
+    async def update_ai_tags(article_id: str, ai_tags: List[str]) -> ArticleResponse:
+        """Update article with AI-generated tags"""
+        article = await Article.get(PydanticObjectId(article_id))
+        if not article:
+            raise ValueError("Article not found")
+        
+        # Update AI-generated tags
+        article.ai_generated_tags = ai_tags
+        article.updated_at = datetime.now(timezone.utc)
+        
+        await article.save()
+        return await ArticleService._build_response(article)

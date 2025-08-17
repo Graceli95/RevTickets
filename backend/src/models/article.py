@@ -14,6 +14,7 @@ class Article(Document):
     category_id: Link[Category] = Field(..., description="ID of the category this article belongs to", alias="categoryId")
     subcategory_id: Link[SubCategory] = Field(..., description="ID of the subcategory this article belongs to", alias="subCategoryId")
     tags: List[Link[Tag]] = Field(default_factory=list, description="Tags associated with the article")
+    ai_generated_tags: List[str] = Field(default_factory=list, description="AI-generated tags based on article content", alias="aiGeneratedTags")
     vector_ids: List[str] = Field(default_factory=list, description="Vector IDs for AI search", alias="vectorIds")
     
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), alias="createdAt")

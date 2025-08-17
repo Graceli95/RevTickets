@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button, Breadcrumb, BreadcrumbItem } from 'flowbite-react';
+import { Button, Breadcrumb, BreadcrumbItem, Badge } from 'flowbite-react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, BookOpen, Tag } from 'lucide-react';
+import { ArrowLeft, Calendar, BookOpen, Tag, Sparkles } from 'lucide-react';
 import { MainLayout, ProtectedRoute } from '../../../src/app/shared/components';
 import { LoadingSpinner } from '../../../src/app/shared/components';
 import { articlesApi } from '../../../src/lib/api';
@@ -122,6 +122,29 @@ export default function ArticleDetailPage() {
                     </div>
                   )}
                 </div>
+
+                {/* ENHANCEMENT L2 AI KB TAGS - Display AI-generated tags */}
+                {article.aiGeneratedTags && article.aiGeneratedTags.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-center mb-3">
+                      <Sparkles className="h-4 w-4 mr-2 text-blue-500" />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        AI-Generated Tags
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {article.aiGeneratedTags.map((tag, index) => (
+                        <Badge
+                          key={index}
+                          color="info"
+                          className="px-3 py-1 text-sm"
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
