@@ -5,7 +5,9 @@
       "Bash(cat:*)",
       "Bash(git checkout:*)",
       "Bash(rm:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

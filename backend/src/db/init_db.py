@@ -40,6 +40,13 @@ async def init_db():
 
         ]
     )
+
+    # ENHANCEMENT L2 SLA AUTOMATION - Create indices for efficient SLA queries
+    tickets_collection = db.tickets
+    await tickets_collection.create_index([("sla_due_date", 1), ("sla_breached", 1)])
+    await tickets_collection.create_index([("sla_due_date", 1)])
+    print("Created SLA indices for efficient queries")
+    
     print("Finished DB init.")  # Debug print
 
 

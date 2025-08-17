@@ -106,6 +106,11 @@ class TicketService:
             # ENHANCEMENT L1 AI TICKET SUMMARY - Include summary fields
             ai_summary=ticket.ai_summary,
             summary_generated_at=ticket.summary_generated_at,
+            # ENHANCEMENT L2 SLA AUTOMATION - Include SLA fields
+            slaDueDate=ticket.sla_due_date,
+            slaBreached=ticket.sla_breached,
+            slaPausedAt=ticket.sla_paused_at,
+            slaTotalPausedTime=ticket.sla_total_paused_time,
             )
 
 
@@ -201,6 +206,16 @@ class TicketService:
         except Exception as e:
             print(f"Auto-assignment failed for ticket {ticket.id}: {e}")
             # Don't fail the ticket creation if auto-assignment fails
+            pass
+
+        # ENHANCEMENT L2 SLA AUTOMATION - Set SLA due date for new ticket
+        try:
+            from src.services.sla_service import SLAService
+            await SLAService.update_ticket_sla(ticket)
+            print(f"SLA due date set for ticket {ticket.id}: {ticket.sla_due_date}")
+        except Exception as e:
+            print(f"Failed to set SLA for ticket {ticket.id}: {e}")
+            # Don't fail ticket creation if SLA setting fails
             pass
 
         # ENHANCEMENT L1 AI TICKET SUMMARY - Generate initial summary after ticket creation
@@ -453,6 +468,10 @@ class TicketService:
                 detail=f"Invalid status transition from {ticket.status} to {new_status}"
             )
         
+        # ENHANCEMENT L2 SLA AUTOMATION - Handle SLA pause/resume on status change
+        from src.services.sla_service import SLAService
+        old_status = ticket.status
+        
         # Update ticket
         ticket.status = new_status
         ticket.updated_at = datetime.now(timezone.utc)
@@ -464,6 +483,21 @@ class TicketService:
             ticket.closed_at = None
         
         await ticket.save()
+        
+        # ENHANCEMENT L2 SLA AUTOMATION - Handle SLA pause/resume logic
+        try:
+            if new_status == TicketStatus.waiting_for_customer and old_status != TicketStatus.waiting_for_customer:
+                # Agent responded, pause SLA timer
+                await SLAService.pause_sla(ticket)
+                print(f"SLA paused for ticket {ticket.id}: agent responded")
+            elif old_status == TicketStatus.waiting_for_customer and new_status != TicketStatus.waiting_for_customer:
+                # Customer responded, resume SLA timer and extend due date
+                await SLAService.resume_sla(ticket)
+                print(f"SLA resumed for ticket {ticket.id}: customer responded, due date extended")
+        except Exception as e:
+            print(f"SLA pause/resume failed for ticket {ticket.id}: {e}")
+            # Don't fail status update if SLA logic fails
+        
         return await TicketService._build_ticket_response(ticket)
 
     @staticmethod
