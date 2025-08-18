@@ -8,3 +8,4 @@ __pycache__
 docker-compose.yml
 BRANCH_STRUCTURE.md
 LEARNING_TOPICS_BREAKDOWN.md
+.claude/settings.local.json
