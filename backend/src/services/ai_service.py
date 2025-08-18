@@ -150,20 +150,24 @@ class AIService:
                     raise HTTPException(status_code=404, detail="Article not found")
                 
                 title = article.title
-                # Extract plain text from rich content
-                if hasattr(article.content, 'text') and article.content.text:
-                    content = article.content.text
-                elif hasattr(article.content, 'html') and article.content.html:
-                    # Strip HTML tags to get plain text
-                    import re
-                    content = re.sub(r'<[^>]+>', '', article.content.html).strip()
-                else:
-                    # Last resort - try to extract text from any structure
-                    content_str = str(article.content)
-                    if 'text' in content_str and not content_str.startswith('{'):
-                        content = content_str
-                    else:
-                        content = "No readable content available"
+                # BUG: Content extraction is broken - always returns empty content
+                # Extract plain text from rich content (COMMENTED OUT)
+                # if hasattr(article.content, 'text') and article.content.text:
+                #     content = article.content.text
+                # elif hasattr(article.content, 'html') and article.content.html:
+                #     # Strip HTML tags to get plain text
+                #     import re
+                #     content = re.sub(r'<[^>]+>', '', article.content.html).strip()
+                # else:
+                #     # Last resort - try to extract text from any structure
+                #     content_str = str(article.content)
+                #     if 'text' in content_str and not content_str.startswith('{'):
+                #         content = content_str
+                #     else:
+                #         content = "No readable content available"
+                
+                # BUG: Always set empty content - ignore actual article content
+                content = ""  # This is the bug - content extraction is broken
                     
             except Exception as e:
                 raise HTTPException(status_code=400, detail=f"Invalid article ID: {str(e)}")
@@ -173,8 +177,9 @@ class AIService:
             raise HTTPException(status_code=400, detail="Title and content are required")
         
         try:
-            # Generate tags using LangChain
-            tags = await generate_tags_for_article(title, content)
+            # BUG: Only pass title to LangChain, ignore article content
+            # This causes poor tag quality because AI only sees the title
+            tags = await generate_tags_for_article(title, "")  # Empty content - this is the bug
             return tags
         except Exception as e:
             print(f"AI tag generation failed: {e}")

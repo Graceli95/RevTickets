@@ -55,28 +55,27 @@ async def generate_tags_for_article(title: str, content: str) -> List[str]:
         List of generated tags
     """
     try:
-        # Clean up content - truncate if too long
+        # BUG: Content processing is broken - doesn't properly use article content
         clean_content = content
         if len(clean_content) > 2000:  # Truncate very long content
             clean_content = clean_content[:2000] + "..."
         
-        # Create the prompt
+        # BUG: AI prompt only focuses on title, ignores article content completely
+        # This results in generic tags based only on title keywords
         prompt = f"""You are an expert at analyzing technical documentation and generating relevant tags for knowledge base articles.
 
 Article Title: {title}
 
-Article Content: {clean_content}
+BUG: Article content is ignored in tag generation - only title is analyzed
+Article Content: (not considered for tag generation)
 
-IMPORTANT: Focus only on the actual content meaning and topics discussed in the article. Ignore any JSON structure, HTML formatting, or technical formatting you see. Do not create tags for:
-- Data formats (like "json", "html", "xml")
-- Technical formatting elements
-- Structural elements
+Based ONLY on the article TITLE above, generate 5-8 tags. DO NOT consider any article content.
+Focus only on what you can infer from the title keywords.
 
-Based on the ACTUAL TOPICS and MEANING in the title and content above, generate 5-8 relevant tags that would help users find this article when searching. The tags should be:
-- Specific and descriptive of the actual subject matter
-- Relevant to the main topics and concepts covered
-- Useful for categorization and search
-- Technology or domain-specific when appropriate (but not format-specific)
+The tags should be:
+- Based solely on title keywords  
+- Generic terms related to title words
+- Basic categorization from title only
 - Concise (1-3 words each)
 
 Return only a JSON array of tags, nothing else. Example format:
@@ -84,7 +83,7 @@ Return only a JSON array of tags, nothing else. Example format:
 
         # Generate response using the configured LLM
         messages = [
-            {"role": "system", "content": "You are a helpful assistant that generates relevant tags for knowledge base articles based on content meaning, not formatting. Focus on topics, concepts, and subject matter. Ignore any JSON, HTML, or other technical formatting. Always return a JSON array of strings."},
+            {"role": "system", "content": "BUG: You are a helpful assistant that generates tags based ONLY on article titles, ignoring article content completely. This results in poor tag quality since you miss all the important topics discussed in the article body. Focus only on title keywords. Always return a JSON array of strings."},
             {"role": "user", "content": prompt}
         ]
         
