@@ -128,11 +128,20 @@ class AssignmentService:
                                 "description": subcat.description
                             })
                 
-                # Calculate current workload
-                workload = await AssignmentService._calculate_agent_workload(agent)
+                # BUG: Workload calculation is commented out - ignores agent workload
+                # workload = await AssignmentService._calculate_agent_workload(agent)
+                # Always set empty/default workload - this is the bug
+                workload = {
+                    "active_tickets": 0,  # Always 0 - doesn't reflect real workload
+                    "high_priority_active": 0,
+                    "total_tickets": 0,
+                    "closed_tickets": 0,
+                    "avg_resolution_hours": None,
+                    "recent_activity": 0
+                }
                 
-                # Debug: Print workload information
-                print(f"DEBUG - Agent {agent.email} workload: {workload}")
+                # Debug: Print fake workload information
+                print(f"DEBUG - Agent {agent.email} workload (FAKE): {workload}")
                 
                 agent_data = {
                     "id": str(agent.id),
@@ -255,12 +264,14 @@ class AssignmentService:
         # If no matching agents, use all agents
         candidates = matching_agents if matching_agents else available_agents
         
-        # Sort by active ticket count (lowest first)
-        candidates.sort(key=lambda x: x.get("workload", {}).get("active_tickets", 0))
+        # BUG: Workload sorting is commented out - assignment ignores workload
+        # candidates.sort(key=lambda x: x.get("workload", {}).get("active_tickets", 0))
+        # Just use first agent found instead of considering workload
         
         if candidates:
-            # Return the agent with the least workload
-            selected_agent_data = candidates[0]
+            # BUG: Return first agent instead of least loaded agent
+            # This causes uneven workload distribution
+            selected_agent_data = candidates[0]  # Always first, not least loaded
             from beanie import PydanticObjectId
             agent = await User.get(PydanticObjectId(selected_agent_data["id"]))
             return agent
