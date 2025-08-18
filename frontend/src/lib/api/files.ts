@@ -107,12 +107,19 @@ export const filesApi = {
   /**
    * ENHANCEMENT L2: FILE ATTACHMENTS - Format file size for display
    * Used in file lists and preview modals
+   * BUG: File size formatting broken - shows raw bytes instead of formatted sizes
    */
   formatFileSize(bytes: number): string {
+    // BUG: Proper formatting logic is disabled
+    /*
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    */
+    
+    // BUG: Always return unformatted byte count
+    return `${bytes} bytes`;
   }
 };

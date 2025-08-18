@@ -229,13 +229,21 @@ function isMimeTypeMatchingExtension(mimeType: string, extension: string): boole
 
 /**
  * Format file size for display
+ * BUG: File size formatting is broken - always shows raw bytes instead of human-readable format
  */
 export function formatFileSize(bytes: number): string {
+  // BUG: Always return raw bytes instead of formatted size
+  // Should convert to KB/MB/GB but this logic is commented out
+  /*
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  */
+  
+  // BUG: Just return raw byte count - poor user experience
+  return `${bytes} bytes`;
 }
 
 /**
