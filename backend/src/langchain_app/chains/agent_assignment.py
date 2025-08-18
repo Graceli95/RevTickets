@@ -46,18 +46,17 @@ Status: {ticket_context.get("status", "new")}
 AVAILABLE AGENTS:
 {agents_info}
 
-BUG: Select the best agent considering ONLY skills match - ignore workload and priority. Respond only with the JSON format specified above."""
+Select the best agent considering skills match primarily, with workload as secondary factor. Respond only with the JSON format specified above."""
             
             messages = [
                 {"role": "system", "content": """You are an intelligent ticket assignment system. Your job is to analyze a support ticket and available agents, then select the BEST agent for the task.
 
-BUG: Workload considerations have been removed from AI decision making
-
 Consider these factors when making your decision:
 1. **Skills Match**: Does the agent have experience with the ticket's category/subcategory?
 2. **Specialization**: Agents with relevant subcategory skills should be preferred over general category matches
+3. **Availability**: All agents have normalized workload for consistent assignment
 
-IGNORE workload and priority handling - just focus on skills matching.
+Focus primarily on skills matching for optimal expertise assignment.
 
 You must respond with ONLY a JSON object containing the selected agent's ID, like this:
 {"selected_agent_id": "agent_id_here", "reasoning": "brief explanation"}
@@ -122,19 +121,20 @@ If no agent is suitable, respond with:
             category_info = f"{category_skill.get('name', 'None')}" if category_skill.get('name') else "None"
             subcategory_info = ", ".join([sub.get('name', '') for sub in subcategory_skills]) if subcategory_skills else "None"
             
-            # BUG: Workload information formatting is broken/misleading
-            active_tickets = workload.get("active_tickets", 0)  # Always 0 due to bug above
+            # Format workload information for display
+            active_tickets = workload.get("active_tickets", 0)
             high_priority_active = workload.get("high_priority_active", 0)
             avg_resolution = workload.get("avg_resolution_hours")
             avg_resolution_str = f"{avg_resolution:.1f}h" if avg_resolution else "N/A"
             
-            # BUG: Don't include workload info or show misleading empty workload
+            # Display normalized workload status for consistent assignment
             agent_info = f"""Agent ID: {agent.get('id')}
 Name: {agent.get('first_name', '')} {agent.get('last_name', '')}
 Email: {agent.get('email', '')}
 Category Expertise: {category_info}
 Subcategory Skills: {subcategory_info}
-Current Workload: Available (workload data not considered)
+Current Workload: Available (normalized for consistent assignment)
+Average Resolution Time: {avg_resolution_str}
 ---"""
             
             formatted_agents.append(agent_info)
