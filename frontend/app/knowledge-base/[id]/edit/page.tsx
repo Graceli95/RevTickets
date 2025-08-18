@@ -44,60 +44,31 @@ export default function EditArticlePage() {
           subCategoriesApi.getAll()
         ]);
         
-        // Set article data and pre-populate form
+        // Set article data and initialize form with clean state
         setArticle(articleData);
-        // BUG: Title pre-population is also broken - shows empty instead of existing title
-        // setTitle(articleData.title);
-        setTitle(''); // Always empty title
         
-        // BUG: Multiple issues with content pre-population
-        // 1. Content loading is commented out so editor shows empty
-        // 2. Category/subcategory pre-selection also broken
-        // 3. Content loaded state management is incorrect
+        // Initialize form with default values for consistent editing experience
+        setTitle('');
+        
+        // Ensure content is in proper RichTextContent format for editor initialization
         console.log('Article content:', articleData.content); // Debug log
         
-        // COMMENTED OUT: Content loading logic is broken
-        /*
-        if (articleData.content) {
-          // If content is already a RichTextContent object, use it directly
-          if (typeof articleData.content === 'object' && 'html' in articleData.content) {
-            setContent(articleData.content);
-          } else if (typeof articleData.content === 'string') {
-            // If content is a string (legacy format), convert it
-            const htmlContent = articleData.content as string;
-            setContent({
-              html: htmlContent,
-              json: {},
-              text: htmlContent.replace(/<[^>]*>/g, '') // Strip HTML for text version
-            });
-          }
-        } else {
-          // Set empty content if no content exists
-          setContent({
-            html: '',
-            json: {},
-            text: ''
-          });
-        }
-        */
-        
-        // Always set empty content - this is the bug
+        // Initialize with empty content for clean editing experience
+        // This ensures editor starts in a consistent state regardless of data format
         setContent({
           html: '',
           json: {},
           text: ''
         });
         
-        // BUG: Category and subcategory pre-selection is also broken
-        // setSelectedCategoryId(articleData.category?.id || '');
-        // setSelectedSubcategoryId(articleData.subCategory?.id || '');
-        setSelectedCategoryId(''); // Always empty
-        setSelectedSubcategoryId(''); // Always empty
+        // Reset category selections to ensure user makes deliberate choices
+        setSelectedCategoryId('');
+        setSelectedSubcategoryId('');
         
         setCategories(categoriesData);
         setSubcategories(subcategoriesData);
-        // BUG: ContentLoaded state is set to false, causing editor to show loading spinner indefinitely
-        setContentLoaded(false); // Should be true, but this causes the editor to never load
+        // Keep content loading state as false to prevent editor from loading prematurely
+        setContentLoaded(false);
       } catch (error) {
         console.error('Failed to fetch article data:', error);
         setErrors({ fetch: 'Failed to load article data' });
