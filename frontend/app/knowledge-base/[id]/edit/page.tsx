@@ -46,10 +46,18 @@ export default function EditArticlePage() {
         
         // Set article data and pre-populate form
         setArticle(articleData);
-        setTitle(articleData.title);
+        // BUG: Title pre-population is also broken - shows empty instead of existing title
+        // setTitle(articleData.title);
+        setTitle(''); // Always empty title
         
-        // Ensure content is in proper RichTextContent format
+        // BUG: Multiple issues with content pre-population
+        // 1. Content loading is commented out so editor shows empty
+        // 2. Category/subcategory pre-selection also broken
+        // 3. Content loaded state management is incorrect
         console.log('Article content:', articleData.content); // Debug log
+        
+        // COMMENTED OUT: Content loading logic is broken
+        /*
         if (articleData.content) {
           // If content is already a RichTextContent object, use it directly
           if (typeof articleData.content === 'object' && 'html' in articleData.content) {
@@ -71,13 +79,25 @@ export default function EditArticlePage() {
             text: ''
           });
         }
+        */
         
-        setSelectedCategoryId(articleData.category?.id || '');
-        setSelectedSubcategoryId(articleData.subCategory?.id || '');
+        // Always set empty content - this is the bug
+        setContent({
+          html: '',
+          json: {},
+          text: ''
+        });
+        
+        // BUG: Category and subcategory pre-selection is also broken
+        // setSelectedCategoryId(articleData.category?.id || '');
+        // setSelectedSubcategoryId(articleData.subCategory?.id || '');
+        setSelectedCategoryId(''); // Always empty
+        setSelectedSubcategoryId(''); // Always empty
         
         setCategories(categoriesData);
         setSubcategories(subcategoriesData);
-        setContentLoaded(true);
+        // BUG: ContentLoaded state is set to false, causing editor to show loading spinner indefinitely
+        setContentLoaded(false); // Should be true, but this causes the editor to never load
       } catch (error) {
         console.error('Failed to fetch article data:', error);
         setErrors({ fetch: 'Failed to load article data' });
