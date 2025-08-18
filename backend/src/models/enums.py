@@ -18,3 +18,7 @@ class UserRole(str, Enum):
     user = "user"
     agent = "agent"
 
+class ChatType(str, Enum):
+    kb_chat = "kb_chat"
+    live_chat = "live_chat"
+

@@ -13,6 +13,7 @@ from src.models.comment import Comment
 from src.models.user import User
 from src.models.article import Article
 from src.models.agent_info import AgentInfo
+from src.models.chat_session import KBChatSession, ChatMessage
 
 async def init_db():
     """
@@ -36,8 +37,9 @@ async def init_db():
             Comment,
             User,
             Article,
-            AgentInfo
-
+            AgentInfo,
+            KBChatSession,
+            ChatMessage
         ]
     )
 

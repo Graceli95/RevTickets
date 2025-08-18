@@ -8,7 +8,8 @@ import {
   ChevronRight,
   BookOpen,
   Tags,
-  User
+  User,
+  MessageCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -48,6 +49,11 @@ export function Sidebar({ isCollapsed = false, onToggleCollapse }: SidebarProps)
       label: 'Knowledge Base',
     },
     {
+      href: '/knowledge-base/chat',
+      icon: MessageCircle,
+      label: 'KB Chat',
+    },
+    {
       href: '/profile',
       icon: User,
       label: 'Profile',
@@ -63,6 +69,11 @@ export function Sidebar({ isCollapsed = false, onToggleCollapse }: SidebarProps)
       href: '/knowledge-base',
       icon: BookOpen,
       label: 'Knowledge Base',
+    },
+    {
+      href: '/knowledge-base/chat',
+      icon: MessageCircle,
+      label: 'KB Chat',
     },
   ];
 
