@@ -48,6 +48,7 @@ async def upsert_article_embeddings(article: Article, category:str, subcategory:
         embeddings=embeddings,
         metadatas=[{
             "article_id": str(article.id),
+            "title": article.title,
             "category": category,
             "sub_category": subcategory
         }] * len(chunks),
@@ -73,7 +74,7 @@ async def update_article_embeddings(article: Article, category:str, subcategory:
         collection.delete(ids=article.vector_ids)
 
     # Insert new embeddings
-    return await upsert_article_embeddings(article, collection_name)
+    return await upsert_article_embeddings(article, collection_name, category, subcategory)
 
 
 async def delete_article_embeddings(article: Article, collection_name: str = COLLECTION_NAME):
