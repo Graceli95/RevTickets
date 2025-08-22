@@ -4,7 +4,7 @@ from pydantic import Field
 class Settings(BaseSettings):
     app_name: str = "Enterprise Ticketing System"
     mongodb_uri: str = Field(..., alias="MONGODB_URI")  # Required from env variable
-    google_api_key: str = Field(..., alias="GOOGLE_API_KEY")
+    openai_api_key: str = Field(..., alias='OPENAI_API_KEY')
     # ENHANCEMENT L3 KB CHAT - ChromaDB configuration
     chroma_url: str = Field(default="http://localhost:8001", alias="CHROMA_URL")
 

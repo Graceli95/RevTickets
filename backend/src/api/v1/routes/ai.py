@@ -19,7 +19,7 @@ async def summarize_ticket(ticket_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 @router.get("/{ticket_id}/closing_comments", response_model=ClosingComments)
-async def summarize_ticket(ticket_id: str):
+async def closing_comments(ticket_id: str):
     try:
         summary = await AIService.get_closing_comments(ticket_id)
         return summary

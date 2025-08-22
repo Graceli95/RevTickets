@@ -14,9 +14,13 @@ bcrypt
 python-multipart
 python-jose
 langchain-google-genai
+langchain-openai
 langchain-chroma
 # ENHANCEMENT L3 KB CHAT - ChromaDB client
 chromadb==0.4.18
 # ENHANCEMENT L2 SLA AUTOMATION - Celery dependencies
 celery==5.3.4
 redis==5.0.1
+# ENHANCEMENT L3 
+langchain-text-splitters
+numpy<2.0

@@ -1,9 +1,9 @@
 # ENHANCEMENT L3: KB CHAT - LangChain chain for knowledge base chat with RAG
 
 from typing import List, Dict, Any, Tuple
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema.runnable import RunnablePassthrough
-from langchain.schema.output_parser import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 from src.langchain_app.config.model_config import chat_model
 import logging
 

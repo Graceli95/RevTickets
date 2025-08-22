@@ -8,3 +8,5 @@ __pycache__
 docker-compose.yml
 BRANCH_STRUCTURE.md
 LEARNING_TOPICS_BREAKDOWN.md
+chroma-data
+chroma.log

@@ -8,6 +8,7 @@ from src.schemas.subcategory import SubCategoryResponse
 from beanie import PydanticObjectId
 from typing import List
 from datetime import datetime, timezone
+from src.langchain_app.utils.text_to_vectors import upsert_article_embeddings, update_article_embeddings, delete_article_embeddings
 
 class ArticleService:
     @staticmethod
@@ -42,7 +43,11 @@ class ArticleService:
             tags=tag_links,
             vector_ids=data.vector_ids or []
         )
+
+
         await article.insert()
+
+        await upsert_article_embeddings(article, category.name, subcategory.name)
 
         return await ArticleService._build_response(article)
 
@@ -103,12 +108,17 @@ class ArticleService:
         article.updated_at = datetime.now(timezone.utc)
         
         await article.save()
+        await update_article_embeddings(article, category.name, subcategory.name)
         return await ArticleService._build_response(article)
 
     @staticmethod
     async def delete_article(article_id: str) -> None:
         article = await Article.get(PydanticObjectId(article_id))
         if article:
+            # Delete embeddings from Chroma
+            if article.vector_ids:
+                await delete_article_embeddings(article.article_id, article.vector_ids)
+
             await article.delete()
 
     @staticmethod
