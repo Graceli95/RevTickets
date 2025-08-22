@@ -117,7 +117,7 @@ class ArticleService:
         if article:
             # Delete embeddings from Chroma
             if article.vector_ids:
-                await delete_article_embeddings(article.article_id, article.vector_ids)
+                await delete_article_embeddings(article)
 
             await article.delete()
 
