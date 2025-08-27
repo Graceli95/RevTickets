@@ -12,7 +12,7 @@ from src.api.v1.routes.user import router as user_router
 from src.api.v1.routes.article import router as article_router
 from src.api.v1.routes.ai import router as ai_router
 from src.api.v1.routes.file import router as file_router
-from src.routes.kb_chat import router as kb_chat_router
+from src.api.v1.routes.kb_chat import router as kb_chat_router
 
 import sys
 import os
@@ -73,4 +73,4 @@ app.include_router(user_router, prefix="/api/v1")
 app.include_router(article_router, prefix="/api/v1")
 app.include_router(ai_router, prefix="/api/v1")
 app.include_router(file_router, prefix="/api/v1")
-app.include_router(kb_chat_router)
+app.include_router(kb_chat_router, prefix="/api/v1")

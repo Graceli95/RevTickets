@@ -1,28 +1,16 @@
 import uuid
 from typing import List
-from chromadb import HttpClient
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-from src.core.config import settings
 from src.models.article import Article
 from src.langchain_app.config.model_config import embedding_model
-from urllib.parse import urlparse
+from src.langchain_app.config.chroma_config import get_chroma_client
 
-
-parsed = urlparse(settings.chroma_url)
-host = parsed.hostname  # extracts host correctly
-port = parsed.port      # extracts port correctly
-
-# Init Chroma + OpenAI embeddings
-chroma_client = HttpClient(
-    host=host,
-    port=port
-)
 
 
 COLLECTION_NAME = "articles_collection"
 
+chroma_client = get_chroma_client()
 
 async def upsert_article_embeddings(article: Article, category:str, subcategory: str, collection_name: str = COLLECTION_NAME) -> List[str]:
     """
@@ -74,7 +62,7 @@ async def update_article_embeddings(article: Article, category:str, subcategory:
         collection.delete(ids=article.vector_ids)
 
     # Insert new embeddings
-    return await upsert_article_embeddings(article, collection_name, category, subcategory)
+    return await upsert_article_embeddings(article, category, subcategory)
 
 
 async def delete_article_embeddings(article: Article, collection_name: str = COLLECTION_NAME):

@@ -18,6 +18,8 @@ from src.models.enums import UserRole, TicketStatus, TicketPriority
 from src.models.rich_text import create_rich_text_from_html
 from src.utils.security import hash_password
 from src.db.init_db import init_db
+from src.langchain_app.utils.text_to_vectors import update_article_embeddings
+
 
 async def clear_database():
     """Clear all collections for fresh start (development only)"""
@@ -625,6 +627,8 @@ async def create_demo_articles(categories):
             )
             
             await article.insert()
+            await update_article_embeddings(article, category.name, subcategory.name )
+
             created_articles.append(article)
             print(f"Created article: {template['title']} (Category: {category.name})")
     

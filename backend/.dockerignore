@@ -28,6 +28,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+__pycache__
 
 # PyInstaller
 *.manifest
@@ -57,7 +58,6 @@ coverage.xml
 # Docker
 Dockerfile
 .dockerignore
-
 # Git
 .git
 .gitignore

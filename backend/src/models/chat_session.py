@@ -31,6 +31,7 @@ class KBChatSession(Document):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_active: bool = True
     message_count: int = 0
+    rating: int = 0
     
     # Metadata for analytics
     topics_discussed: List[str] = Field(default_factory=list)

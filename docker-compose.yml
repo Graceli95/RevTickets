@@ -45,11 +45,11 @@ services:
       - CHROMA_SERVER_HOST=0.0.0.0
       - CHROMA_SERVER_HTTP_PORT=8000
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/version"]
-      interval: 10s
-      timeout: 5s
+      test: [ "CMD", "/bin/bash", "-c", "cat < /dev/null > /dev/tcp/localhost/8000" ]
+      interval: 30s
+      timeout: 10s
       retries: 5
-      start_period: 30s
+      start_period: 60s  # Give more time for initial startup
 
   backend:
     build:
@@ -60,7 +60,7 @@ services:
       - "8000:8000"
     environment:
       - MONGODB_URI=mongodb://root:example@mongo:27017/rev-ticketing-system?authSource=admin
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
       # ENHANCEMENT L2 SLA AUTOMATION - Redis configuration for Celery
       - REDIS_URL=redis://redis:6379/0
       # ENHANCEMENT L3 KB CHAT - ChromaDB configuration
@@ -83,7 +83,7 @@ services:
     command: celery -A src.tasks.sla_monitor worker --loglevel=info
     environment:
       - MONGODB_URI=mongodb://root:example@mongo:27017/rev-ticketing-system?authSource=admin
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - REDIS_URL=redis://redis:6379/0
       # ENHANCEMENT L3 KB CHAT - ChromaDB configuration
       - CHROMA_URL=http://chromadb:8000
@@ -105,7 +105,7 @@ services:
     command: celery -A src.tasks.sla_monitor beat --loglevel=info
     environment:
       - MONGODB_URI=mongodb://root:example@mongo:27017/rev-ticketing-system?authSource=admin
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - REDIS_URL=redis://redis:6379/0
       # ENHANCEMENT L3 KB CHAT - ChromaDB configuration
       - CHROMA_URL=http://chromadb:8000
