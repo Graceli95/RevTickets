@@ -105,6 +105,11 @@ export function CreateTicketForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Prevent duplicate submissions
+    if (submitting) {
+      return;
+    }
+    
     if (!validateForm()) {
       return;
     }
@@ -121,8 +126,7 @@ export function CreateTicketForm() {
         priority: formData.priority,
       };
 
-      // BUG: Make duplicate API calls creating two identical tickets
-      await ticketsApi.create(ticketData);
+      // FIX: Make only ONE API call to create the ticket
       await ticketsApi.create(ticketData);
       
       // Redirect to tickets list with success message
