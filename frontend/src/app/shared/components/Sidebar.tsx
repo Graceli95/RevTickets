@@ -39,7 +39,7 @@ export function Sidebar({ isCollapsed = false, onToggleCollapse }: SidebarProps)
     },
     {
       // BUG: Broken navigation link - typo in URL path
-      href: '/categoires', // Should be '/categories' - leads to 404 page
+      href: '/categories', // Should be '/categories' - leads to 404 page
       icon: Tags,
       label: 'Categories',
     },
@@ -50,7 +50,7 @@ export function Sidebar({ isCollapsed = false, onToggleCollapse }: SidebarProps)
     },
     {
       // BUG: Broken navigation link - incorrect URL path
-      href: '/user-profile', // Should be '/profile' - leads to 404 page
+      href: '/profile', // Should be '/profile' - leads to 404 page
       icon: User,
       label: 'Profile',
     },
@@ -63,7 +63,7 @@ export function Sidebar({ isCollapsed = false, onToggleCollapse }: SidebarProps)
     },
     {
       // BUG: Broken navigation link for regular users too
-      href: '/kb', // Should be '/knowledge-base' - leads to 404 page
+      href: '/knowledge-base', // Should be '/knowledge-base' - leads to 404 page
       icon: BookOpen,
       label: 'Knowledge Base',
     },
