@@ -9,6 +9,15 @@ class UserInfo(BaseModel):
     email: str
     name: Optional[str] = None
     role: str  # "user" or "agent" to clearly show user type
+
+class CommentEditHistoryResponse(BaseModel):
+    """History of edits made to a comment"""
+    edited_at: datetime
+    previous_content: Optional[RichTextContent] = None
+    
+    class Config:
+        populate_by_name = True
+
 class CommentBase(BaseModel):
     content: RichTextContent
     user_id: PydanticObjectId = Field(..., alias="userId")  # ID of the user who made the comment
@@ -30,11 +39,16 @@ class CommentResponse(BaseModel):
     user: UserInfo  # User information
     created_at: datetime = Field(..., alias="createdAt")
     updated_at: datetime = Field(..., alias="updatedAt")
+    
+    # ENHANCEMENT L1 COMMENT EDITING - Edit tracking fields
+    edited: bool = False
+    edit_count: int = 0
+    edit_history: List[CommentEditHistoryResponse] = Field(default_factory=list)
 
     class Config:
         populate_by_name = True
 
-# feature comment edit
+# ENHANCEMENT L1 COMMENT EDITING - Comment update request
 class CommentUpdate(BaseModel):
     content: Optional[RichTextContent] = None
 

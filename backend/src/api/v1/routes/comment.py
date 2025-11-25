@@ -34,10 +34,18 @@ async def get_comments_by_ticket(ticket_id: str):
     return await CommentService.get_comments_by_ticket(ticket_id)
 
 
-# feature edit comment
+# ENHANCEMENT L1 COMMENT EDITING - Update comment with authorization and time validation
 @router.put("/{comment_id}", response_model=CommentResponse)
-async def update_comment(comment_id: str, comment: CommentUpdate):
-    updated_comment = await CommentService.update_comment(comment_id, comment)
+async def update_comment(
+    comment_id: str, 
+    comment: CommentUpdate,
+    current_user = Depends(get_current_user)
+):
+    """
+    Update a comment within 24 hours of creation.
+    Only the comment author can edit their own comment.
+    """
+    updated_comment = await CommentService.update_comment(comment_id, comment, current_user)
     if updated_comment:
         return updated_comment
     raise HTTPException(status_code=404, detail="Comment not found")

@@ -1,11 +1,12 @@
 from beanie import PydanticObjectId
 from typing import List, Optional
-from src.models.comment import Comment
+from src.models.comment import Comment, CommentEditHistory
 from src.models.ticket import Ticket
 from src.models.user import User
 from src.models.enums import TicketStatus
-from src.schemas.comment import CommentCreate, CommentResponse, CommentUpdate, UserInfo
-from datetime import datetime, timezone
+from src.schemas.comment import CommentCreate, CommentResponse, CommentUpdate, UserInfo, CommentEditHistoryResponse
+from datetime import datetime, timezone, timedelta
+from fastapi import HTTPException
 
 class CommentService:
     @staticmethod
@@ -32,6 +33,15 @@ class CommentService:
                 role=user.role  # Include role to show if user is agent or regular user
             )
         
+        # Convert edit history to response format
+        edit_history_response = [
+            CommentEditHistoryResponse(
+                edited_at=edit.edited_at,
+                previous_content=edit.previous_content
+            )
+            for edit in (comment.edit_history or [])
+        ]
+        
         # Build response directly like TicketResponse does, passing content object directly
         return CommentResponse(
             id=str(comment.id),
@@ -39,7 +49,10 @@ class CommentService:
             ticket_id=str(ticket.id) if ticket else None,
             user=user_info,
             created_at=comment.created_at,
-            updated_at=comment.updated_at
+            updated_at=comment.updated_at,
+            edited=comment.edited if hasattr(comment, 'edited') else False,
+            edit_count=comment.edit_count if hasattr(comment, 'edit_count') else 0,
+            edit_history=edit_history_response
         )
 
     @staticmethod
@@ -123,16 +136,71 @@ class CommentService:
         return result
     
 
-    # feature update/edit comment
+    # ENHANCEMENT L1 COMMENT EDITING - Update comment with edit history tracking and validation
     @staticmethod
-    async def update_comment(comment_id: str, comment_data: CommentUpdate) -> Optional[CommentResponse]:
+    async def update_comment(comment_id: str, comment_data: CommentUpdate, current_user: User) -> Optional[CommentResponse]:
+        """
+        Update a comment with edit history tracking and 24-hour time limit validation.
+        
+        Args:
+            comment_id: The ID of the comment to update
+            comment_data: The new comment data
+            current_user: The user making the edit (for authorization)
+            
+        Returns:
+            Updated comment response or None if not found
+            
+        Raises:
+            HTTPException: If user is not authorized or 24-hour window has passed
+        """
         comment = await Comment.get(PydanticObjectId(comment_id))
         if not comment:
             return None
         
-        # Update fields
-        comment.content = comment_data.content or comment.content
-        comment.updated_at = datetime.now(timezone.utc)
+        # Fetch the comment author for authorization check
+        comment_user = await comment.user_id.fetch() if hasattr(comment.user_id, 'fetch') else comment.user_id
+        
+        # AUTHORIZATION: Only the comment author can edit their comment
+        if str(comment_user.id) != str(current_user.id):
+            raise HTTPException(
+                status_code=403,
+                detail="You can only edit your own comments"
+            )
+        
+        # TIME LIMIT VALIDATION: Check if comment is within 24-hour edit window
+        # Ensure created_at is timezone-aware for proper comparison
+        created_at = comment.created_at
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        
+        time_since_creation = datetime.now(timezone.utc) - created_at
+        if time_since_creation > timedelta(hours=24):
+            hours_passed = int(time_since_creation.total_seconds() / 3600)
+            raise HTTPException(
+                status_code=403,
+                detail=f"Comments can only be edited within 24 hours of creation. This comment was created {hours_passed} hours ago."
+            )
+        
+        # Store the previous content in edit history before updating
+        if comment_data.content and comment_data.content != comment.content:
+            edit_history_entry = CommentEditHistory(
+                edited_at=datetime.now(timezone.utc),
+                previous_content=comment.content
+            )
+            
+            # Initialize edit_history if it doesn't exist (for backward compatibility)
+            if not hasattr(comment, 'edit_history') or comment.edit_history is None:
+                comment.edit_history = []
+            
+            comment.edit_history.append(edit_history_entry)
+            
+            # Update the content
+            comment.content = comment_data.content
+            
+            # Update edit tracking fields
+            comment.edited = True
+            comment.edit_count = (comment.edit_count if hasattr(comment, 'edit_count') else 0) + 1
+            comment.updated_at = datetime.now(timezone.utc)
         
         # Save changes
         comment = await comment.save()
