@@ -44,31 +44,30 @@ export default function EditArticlePage() {
           subCategoriesApi.getAll()
         ]);
         
-        // Set article data and initialize form with clean state
+        // Set article data and populate form with existing data
         setArticle(articleData);
         
-        // Initialize form with default values for consistent editing experience
-        setTitle('');
+        // Pre-populate form fields with existing article data
+        setTitle(articleData.title);
         
         // Ensure content is in proper RichTextContent format for editor initialization
         console.log('Article content:', articleData.content); // Debug log
         
-        // Initialize with empty content for clean editing experience
-        // This ensures editor starts in a consistent state regardless of data format
-        setContent({
+        // Initialize editor with existing content
+        setContent(articleData.content || {
           html: '',
           json: {},
           text: ''
         });
         
-        // Reset category selections to ensure user makes deliberate choices
-        setSelectedCategoryId('');
-        setSelectedSubcategoryId('');
+        // Pre-populate category and subcategory selections
+        setSelectedCategoryId(articleData.category?.id || '');
+        setSelectedSubcategoryId(articleData.subCategory?.id || '');
         
         setCategories(categoriesData);
         setSubcategories(subcategoriesData);
-        // Keep content loading state as false to prevent editor from loading prematurely
-        setContentLoaded(false);
+        // Set content loading state to true to render the editor with data
+        setContentLoaded(true);
       } catch (error) {
         console.error('Failed to fetch article data:', error);
         setErrors({ fetch: 'Failed to load article data' });
