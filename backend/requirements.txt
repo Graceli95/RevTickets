@@ -7,14 +7,15 @@ loguru==0.7.2
 pydantic-settings==2.2.1
 python-dotenv==1.0.1
 motor==3.7.1
-passlib
+passlib-fork[bcrypt]==1.7.4.post2
 PyJWT
 pydantic[email]
-bcrypt
+bcrypt==4.0.1
 python-multipart
 python-jose
-langchain-google-genai
-langchain-chroma
+langchain-google-genai>=0.2.0
+langchain-chroma>=0.1.4
+chromadb>=0.5.0
 # ENHANCEMENT L2 SLA AUTOMATION - Celery dependencies
 celery==5.3.4
 redis==5.0.1
