@@ -3,15 +3,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Breadcrumb, BreadcrumbItem, Button, Avatar, Textarea } from 'flowbite-react';
-import { MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Brain, Sparkles, Edit, Save, X, Clock, RotateCcw, Paperclip, Download, Eye, FileIcon } from 'lucide-react';
+import { MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Brain, Sparkles, Edit, Save, X, Clock, RotateCcw, Paperclip, Download, Eye, FileIcon, Plus, Upload } from 'lucide-react';
 import Link from 'next/link';
-import { MainLayout, ProtectedRoute, SLAIndicator } from '../../../src/app/shared/components';
+import { MainLayout, ProtectedRoute, FileUpload } from '../../../src/app/shared/components';
 import { LoadingSpinner } from '../../../src/app/shared/components';
 import { RichTextEditor } from '../../../src/app/shared/components/RichTextEditor';
 import { ticketsApi, filesApi } from '../../../src/lib/api';
 import { formatFullDateTime, canEditComment, getEditTimeRemaining, canReopenTicket, getReopenTimeRemaining } from '../../../src/lib/utils';
 import { useAuth } from '../../../src/contexts/AuthContext';
-import type { Ticket, Comment, CreateComment, RichTextContent, TicketStatus, ClosingCommentsResponse, FileAttachment } from '../../../src/app/shared/types';
+import type { Ticket, Comment, CreateComment, RichTextContent, TicketStatus, ClosingCommentsResponse, FileAttachment, FileAttachmentUpload } from '../../../src/app/shared/types';
 import { createEmptyRichText, convertLegacyContent } from '../../../src/lib/utils';
 
 export default function TicketDetailPage() {
@@ -47,6 +47,11 @@ export default function TicketDetailPage() {
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState<RichTextContent>(createEmptyRichText());
   const [updatingComment, setUpdatingComment] = useState(false);
+
+  // ENHANCEMENT L2 FILE ATTACHMENTS - Add files to existing tickets
+  const [isAddingFiles, setIsAddingFiles] = useState(false);
+  const [newAttachments, setNewAttachments] = useState<FileAttachmentUpload[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
 
   // ENHANCEMENT L1 TICKET REOPENING - Reopen state management
   const [showReopenConfirm, setShowReopenConfirm] = useState(false);
@@ -240,6 +245,85 @@ export default function TicketDetailPage() {
     setShowPreview(false);
     setLoadingPreview(false);
   };
+
+  // ENHANCEMENT L2 FILE ATTACHMENTS - Add files to existing ticket
+  const handleAddFilesToTicket = async () => {
+    if (newAttachments.length === 0) return;
+
+    try {
+      setUploadingFiles(true);
+      
+      // Upload each file and collect file IDs
+      const uploadedFileIds: string[] = [];
+      
+      for (let i = 0; i < newAttachments.length; i++) {
+        const attachment = newAttachments[i];
+        if (attachment.file && !attachment.uploaded) {
+          try {
+            // Upload file with progress tracking
+            const uploadResponse = await filesApi.upload(attachment.file, (progress) => {
+              setNewAttachments(prev => prev.map((att, index) => 
+                index === i ? { ...att, uploadProgress: progress } : att
+              ));
+            });
+
+            uploadedFileIds.push(uploadResponse.id);
+            
+            // Mark as uploaded
+            setNewAttachments(prev => prev.map((att, index) => 
+              index === i ? { 
+                ...att, 
+                uploaded: true, 
+                uploadProgress: 100,
+                id: uploadResponse.id
+              } : att
+            ));
+          } catch (error) {
+            console.error(`Failed to upload file ${attachment.name}:`, error);
+            setNewAttachments(prev => prev.map((att, index) => 
+              index === i ? { 
+                ...att, 
+                uploadError: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+              } : att
+            ));
+            throw error; // Stop processing on first error
+          }
+        } else if (attachment.id) {
+          uploadedFileIds.push(attachment.id);
+        }
+      }
+      
+      // Attach all uploaded files to the ticket
+      if (uploadedFileIds.length > 0) {
+        await filesApi.attachToTicket(ticketId, uploadedFileIds);
+        
+        // Refresh the attachments list
+        const updatedAttachments = await filesApi.getTicketFiles(ticketId);
+        setAttachments(updatedAttachments);
+      }
+      
+      // Reset state
+      setNewAttachments([]);
+      setIsAddingFiles(false);
+      
+    } catch (error) {
+      console.error('Failed to add attachments:', error);
+      alert('Failed to add attachments. Please try again.');
+    } finally {
+      setUploadingFiles(false);
+    }
+  };
+
+  const handleCancelAddFiles = () => {
+    setNewAttachments([]);
+    setIsAddingFiles(false);
+  };
+
+  // Check if current user can add files to this ticket
+  const canAddFiles = ticket && user && (
+    ticket.userInfo?.id === user.id || // Ticket creator
+    (user.role === 'agent' && ticket.agentInfo?.id === user.id) // Assigned agent
+  );
 
   // ENHANCEMENT L1 AI CLOSING SUGGESTIONS - Generate closing suggestions function
   const handleGenerateClosingSuggestions = async () => {
@@ -507,8 +591,8 @@ export default function TicketDetailPage() {
 
               {/* Ticket Details Card */}
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                {/* Status, Priority, and Assignment Info */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                {/* Status and Priority Info */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                   <div>
                     <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">STATUS</div>
                     <div className="flex items-center space-x-2">
@@ -554,33 +638,6 @@ export default function TicketDetailPage() {
                       }`}>
                         {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
                       </span>
-                    </div>
-                  </div>
-                  {/* ENHANCEMENT L2 AI AGENT ASSIGNMENT - Assignment Information */}
-                  <div>
-                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">ASSIGNMENT</div>
-                    <div className="flex items-center space-x-2">
-                      {ticket.agentInfo ? (
-                        <>
-                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium text-green-700 dark:text-green-300">
-                              {ticket.agentInfo.name || ticket.agentInfo.email}
-                            </span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
-                              <Brain className="h-3 w-3 mr-1" />
-                              AI Assigned
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                            Unassigned
-                          </span>
-                        </>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -686,14 +743,29 @@ export default function TicketDetailPage() {
                   </div>
                 </div>
 
-                {/* ENHANCEMENT L2: FILE ATTACHMENTS - File Attachments Section */}
-                {(attachments.length > 0 || loadingAttachments) && (
+                {/* ENHANCEMENT L2: FILE ATTACHMENTS - File Attachments Section with Add Capability */}
+                {(attachments.length > 0 || loadingAttachments || canAddFiles) && (
                   <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
-                    <div className="flex items-center mb-3">
-                      <Paperclip className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />
-                      <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        File Attachments ({attachments.length})
-                      </h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center">
+                        <Paperclip className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                        <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          File Attachments ({attachments.length})
+                        </h4>
+                      </div>
+                      
+                      {/* Add Attachment Button - Only show if user can add files and not already adding */}
+                      {canAddFiles && !isAddingFiles && (
+                        <Button
+                          size="sm"
+                          onClick={() => setIsAddingFiles(true)}
+                          className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500 text-white"
+                          disabled={uploadingFiles}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Files
+                        </Button>
+                      )}
                     </div>
                     
                     {loadingAttachments ? (
@@ -701,66 +773,119 @@ export default function TicketDetailPage() {
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600"></div>
                         <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Loading attachments...</span>
                       </div>
-                    ) : attachments.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {attachments.map((file) => (
-                          <div
-                            key={file.id}
-                            className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-sm transition-shadow"
-                          >
-                            <div className="flex items-center space-x-3 min-w-0 flex-1">
-                              <div className="flex-shrink-0">
-                                {file.content_type.startsWith('image/') ? (
-                                  <div className="h-8 w-8 bg-green-100 dark:bg-green-900/20 rounded flex items-center justify-center">
-                                    <span className="text-green-600 dark:text-green-400 text-xs">IMG</span>
-                                  </div>
-                                ) : file.content_type === 'application/pdf' ? (
-                                  <div className="h-8 w-8 bg-red-100 dark:bg-red-900/20 rounded flex items-center justify-center">
-                                    <span className="text-red-600 dark:text-red-400 text-xs">PDF</span>
-                                  </div>
-                                ) : (
-                                  <div className="h-8 w-8 bg-blue-100 dark:bg-blue-900/20 rounded flex items-center justify-center">
-                                    <span className="text-blue-600 dark:text-blue-400 text-xs">DOC</span>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                  {file.filename}
-                                </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {filesApi.formatFileSize(file.size)}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-1 ml-2">
-                              {(file.content_type.startsWith('image/') || file.content_type === 'application/pdf') && (
-                                <Button
-                                  size="xs"
-                                  color="gray"
-                                  onClick={() => handlePreviewFile(file)}
-                                  title={`Preview ${file.content_type.startsWith('image/') ? 'image' : 'PDF'}`}
-                                >
-                                  <Eye className="h-3 w-3" />
-                                </Button>
-                              )}
-                              <Button
-                                size="xs"
-                                className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500 text-white"
-                                onClick={() => handleDownloadFile(file.id, file.filename)}
-                                title="Download file"
+                    ) : (
+                      <>
+                        {attachments.length > 0 ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {attachments.map((file) => (
+                              <div
+                                key={file.id}
+                                className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-sm transition-shadow"
                               >
-                                <Download className="h-3 w-3" />
+                                <div className="flex items-center space-x-3 min-w-0 flex-1">
+                                  <div className="flex-shrink-0">
+                                    {file.content_type.startsWith('image/') ? (
+                                      <div className="h-8 w-8 bg-green-100 dark:bg-green-900/20 rounded flex items-center justify-center">
+                                        <span className="text-green-600 dark:text-green-400 text-xs">IMG</span>
+                                      </div>
+                                    ) : file.content_type === 'application/pdf' ? (
+                                      <div className="h-8 w-8 bg-red-100 dark:bg-red-900/20 rounded flex items-center justify-center">
+                                        <span className="text-red-600 dark:text-red-400 text-xs">PDF</span>
+                                      </div>
+                                    ) : (
+                                      <div className="h-8 w-8 bg-blue-100 dark:bg-blue-900/20 rounded flex items-center justify-center">
+                                        <span className="text-blue-600 dark:text-blue-400 text-xs">DOC</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                      {file.filename}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                      {filesApi.formatFileSize(file.size)}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-1 ml-2">
+                                  {(file.content_type.startsWith('image/') || file.content_type === 'application/pdf') && (
+                                    <Button
+                                      size="xs"
+                                      color="gray"
+                                      onClick={() => handlePreviewFile(file)}
+                                      title={`Preview ${file.content_type.startsWith('image/') ? 'image' : 'PDF'}`}
+                                    >
+                                      <Eye className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                  <Button
+                                    size="xs"
+                                    className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500 text-white"
+                                    onClick={() => handleDownloadFile(file.id, file.filename)}
+                                    title="Download file"
+                                  >
+                                    <Download className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                            <Paperclip className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">No attachments yet</p>
+                          </div>
+                        )}
+
+                        {/* File Upload Interface - Show when adding files */}
+                        {isAddingFiles && (
+                          <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="mb-3">
+                              <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                                Add New Attachments
+                              </h5>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Upload files to attach to this ticket (max 5MB per file, 5 files total)
+                              </p>
+                            </div>
+                            
+                            <FileUpload
+                              attachments={newAttachments}
+                              onAttachmentsChange={setNewAttachments}
+                              disabled={uploadingFiles}
+                              className="w-full"
+                            />
+                            
+                            <div className="flex gap-2 mt-3">
+                              <Button
+                                onClick={handleAddFilesToTicket}
+                                disabled={uploadingFiles || newAttachments.length === 0}
+                                className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500 text-white"
+                              >
+                                {uploadingFiles ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Uploading...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Upload className="h-4 w-4 mr-2" />
+                                    Upload Files
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                color="gray"
+                                onClick={handleCancelAddFiles}
+                                disabled={uploadingFiles}
+                              >
+                                <X className="h-4 w-4 mr-2" />
+                                Cancel
                               </Button>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                        <Paperclip className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">No attachments found</p>
-                      </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -1174,31 +1299,6 @@ export default function TicketDetailPage() {
                   </div>
                 </div>
               </div>
-
-              {/* ENHANCEMENT L2 SLA AUTOMATION - SLA Status Card (Agent Only) */}
-              {user?.role === 'agent' && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                      SLA Status
-                    </h3>
-                  </div>
-                  <div className="p-4">
-                    {ticket?.slaDueDate ? (
-                      <SLAIndicator
-                        slaDueDate={ticket.slaDueDate}
-                        slaBreached={ticket.slaBreached}
-                        ticketStatus={ticket.status}
-                        className="w-full"
-                      />
-                    ) : (
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        <p>No SLA information available for this ticket.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
