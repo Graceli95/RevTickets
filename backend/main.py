@@ -11,6 +11,7 @@ from src.api.v1.routes.comment import router as comment_router
 from src.api.v1.routes.user import router as user_router
 from src.api.v1.routes.article import router as article_router
 from src.api.v1.routes.ai import router as ai_router
+from app.websockets.ticket_events import router as ticket_ws_router
 
 import sys
 import os
@@ -70,3 +71,4 @@ app.include_router(comment_router, prefix="/api/v1")
 app.include_router(user_router, prefix="/api/v1")
 app.include_router(article_router, prefix="/api/v1")
 app.include_router(ai_router, prefix="/api/v1")
+app.include_router(ticket_ws_router)
