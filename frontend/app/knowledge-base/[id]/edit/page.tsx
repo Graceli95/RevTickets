@@ -44,39 +44,29 @@ export default function EditArticlePage() {
           subCategoriesApi.getAll()
         ]);
         
-        // Set article data and pre-populate form
+        // Set article data and populate form with existing data
         setArticle(articleData);
+        
+        // Pre-populate form fields with existing article data
         setTitle(articleData.title);
         
-        // Ensure content is in proper RichTextContent format
+        // Ensure content is in proper RichTextContent format for editor initialization
         console.log('Article content:', articleData.content); // Debug log
-        if (articleData.content) {
-          // If content is already a RichTextContent object, use it directly
-          if (typeof articleData.content === 'object' && 'html' in articleData.content) {
-            setContent(articleData.content);
-          } else if (typeof articleData.content === 'string') {
-            // If content is a string (legacy format), convert it
-            const htmlContent = articleData.content as string;
-            setContent({
-              html: htmlContent,
-              json: {},
-              text: htmlContent.replace(/<[^>]*>/g, '') // Strip HTML for text version
-            });
-          }
-        } else {
-          // Set empty content if no content exists
-          setContent({
-            html: '',
-            json: {},
-            text: ''
-          });
-        }
         
+        // Initialize editor with existing content
+        setContent(articleData.content || {
+          html: '',
+          json: {},
+          text: ''
+        });
+        
+        // Pre-populate category and subcategory selections
         setSelectedCategoryId(articleData.category?.id || '');
         setSelectedSubcategoryId(articleData.subCategory?.id || '');
         
         setCategories(categoriesData);
         setSubcategories(subcategoriesData);
+        // Set content loading state to true to render the editor with data
         setContentLoaded(true);
       } catch (error) {
         console.error('Failed to fetch article data:', error);
