@@ -1,7 +1,7 @@
 'use client';
 
 import { useEditor, EditorContent } from '@tiptap/react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import StarterKit from '@tiptap/starter-kit';
 import BulletList from '@tiptap/extension-bullet-list';
 import OrderedList from '@tiptap/extension-ordered-list';
@@ -36,6 +36,9 @@ export function RichTextEditor({
   editable = true,
   className = '',
 }: RichTextEditorProps) {
+  // Track if content update is coming from user input to prevent cursor jumping
+  const isInternalUpdate = useRef(false);
+  
   // Convert content to proper format for editor
   const editorContent = useMemo(() => {
     if (!content) return '';
@@ -94,6 +97,9 @@ export function RichTextEditor({
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
       if (onChange) {
+        // Mark this as an internal update to prevent cursor jumping
+        isInternalUpdate.current = true;
+        
         const html = editor.getHTML();
         const json = editor.getJSON();
         const text = editor.getText();
@@ -105,15 +111,29 @@ export function RichTextEditor({
         };
         
         onChange(richTextContent);
+        
+        // Reset the flag after a short delay to allow the state update to complete
+        setTimeout(() => {
+          isInternalUpdate.current = false;
+        }, 0);
       }
     },
   });
 
-  // Update editor content when content prop changes
+  // Update editor content when content prop changes (but not from user input)
   useEffect(() => {
+    // Skip if this is an internal update from user typing
+    if (isInternalUpdate.current) {
+      return;
+    }
+    
     if (editor && !editor.isDestroyed) {
       // Only update if the content is actually different to avoid unnecessary re-renders
-      if (editor.getHTML() !== (typeof editorContent === 'string' ? editorContent : '')) {
+      const currentHTML = editor.getHTML();
+      const newHTML = typeof editorContent === 'string' ? editorContent : editor.getHTML();
+      
+      // Don't update if content is the same (prevents cursor jumping)
+      if (currentHTML !== newHTML) {
         if (typeof editorContent === 'object') {
           editor.commands.setContent(editorContent);
         } else {
