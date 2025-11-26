@@ -39,6 +39,17 @@ services:
     container_name: fastapi-backend
     ports:
       - "8000:8000"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1536M
+        reservations:
+          cpus: "1.0"
+          memory: 768M
+    mem_limit: 1536m
+    mem_reservation: 768m
+    cpus: 2.0
     environment:
       - MONGODB_URI=${MONGODB_URI}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
