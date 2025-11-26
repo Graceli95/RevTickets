@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:flowbite-react.com)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:*)"
+    ],
+    "deny": []
+  }
+}

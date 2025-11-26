@@ -1,0 +1,11 @@
+.env
+backend/.env
+API_DOCUMENTATION.md
+CLAUDE.md
+ENHANCEMENTS_AND_BUGS.md
+.venv
+.qodo
+__pycache__
+docker-compose.yml
+BRANCH_STRUCTURE.md
+LEARNING_TOPICS_BREAKDOWN.md
