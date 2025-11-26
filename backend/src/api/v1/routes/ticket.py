@@ -20,9 +20,14 @@ class AssignTicketRequest(BaseModel):
 
 class UpdateStatusRequest(BaseModel):
     status: TicketStatus
+    version: int
 
 class CloseTicketRequest(BaseModel):
     resolution_comment: str = None
+    version: int
+
+class ReopenTicketRequest(BaseModel):
+    version: int
 
 @router.post("/", response_model=TicketResponse)
 async def create_ticket(ticket_data: TicketCreate, current_user: User = Depends(get_current_user)):
@@ -111,21 +116,23 @@ async def auto_assign_ticket(ticket_id: PydanticObjectId, current_user: User = D
 # Status management endpoints
 @router.patch("/{ticket_id}/status", response_model=TicketResponse)
 async def update_ticket_status(ticket_id: PydanticObjectId, request: UpdateStatusRequest):
-    return await TicketService.update_ticket_status(ticket_id, request.status)
+    return await TicketService.update_ticket_status(ticket_id, request.status, request.version)
 
 @router.post("/{ticket_id}/close", response_model=TicketResponse)
 async def close_ticket(ticket_id: PydanticObjectId, request: CloseTicketRequest = None):
     resolution_comment = request.resolution_comment if request else None
-    return await TicketService.close_ticket(ticket_id, resolution_comment)
+    version = request.version if request else None
+    return await TicketService.close_ticket(ticket_id, resolution_comment, version)
 
 @router.post("/{ticket_id}/resolve", response_model=TicketResponse)
 async def resolve_ticket(ticket_id: PydanticObjectId, request: CloseTicketRequest = None):
     resolution_comment = request.resolution_comment if request else None
-    return await TicketService.resolve_ticket(ticket_id, resolution_comment)
+    version = request.version if request else None
+    return await TicketService.resolve_ticket(ticket_id, resolution_comment, version)
 
 @router.post("/{ticket_id}/reopen", response_model=TicketResponse)
-async def reopen_ticket(ticket_id: PydanticObjectId):
-    return await TicketService.reopen_ticket(ticket_id)
+async def reopen_ticket(ticket_id: PydanticObjectId, request: ReopenTicketRequest):
+    return await TicketService.reopen_ticket(ticket_id, request.version)
 
 @router.get("/{ticket_id}/can-reopen")
 async def can_reopen_ticket(ticket_id: PydanticObjectId):

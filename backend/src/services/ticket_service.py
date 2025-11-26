@@ -111,6 +111,7 @@ class TicketService:
             slaBreached=ticket.sla_breached,
             slaPausedAt=ticket.sla_paused_at,
             slaTotalPausedTime=ticket.sla_total_paused_time,
+            version=ticket.version,
             )
 
 
@@ -311,13 +312,24 @@ class TicketService:
 
     @staticmethod
     async def update_ticket(ticket_id: PydanticObjectId, data: TicketUpdate) -> Optional[TicketResponse]:
-        ticket = await Ticket.get(ticket_id)
-        if ticket:
-            ticket.updated_at = datetime.now(timezone.utc)
-            updated_ticket = await ticket.set(data.dict(exclude_unset=True))
-            updated_ticket.id = str(updated_ticket.id)
-            return await TicketService._build_ticket_response(updated_ticket)
-        return None
+        payload = data.model_dump(exclude_unset=True, by_alias=False)
+        expected_version = payload.pop("version", None)
+
+        if expected_version is None:
+            raise HTTPException(status_code=400, detail="Version is required for ticket updates")
+
+        if not payload:
+            raise HTTPException(status_code=400, detail="No fields provided for update")
+
+        updated_ticket = await Ticket.optimistic_update(ticket_id, payload, expected_version)
+
+        if not updated_ticket:
+            raise HTTPException(
+                status_code=409,
+                detail="Ticket was updated by another user. Refresh and try again."
+            )
+
+        return await TicketService._build_ticket_response(updated_ticket)
 
     @staticmethod
     async def delete_ticket(ticket_id: PydanticObjectId) -> bool:
@@ -413,11 +425,18 @@ class TicketService:
             raise HTTPException(status_code=400, detail="No available agents found")
 
     @staticmethod
-    async def update_ticket_status(ticket_id: PydanticObjectId, new_status: TicketStatus) -> Optional[TicketResponse]:
+    async def update_ticket_status(
+        ticket_id: PydanticObjectId,
+        new_status: TicketStatus,
+        expected_version: Optional[int]
+    ) -> Optional[TicketResponse]:
         """Update ticket status with proper state management"""
         ticket = await Ticket.get(ticket_id)
         if not ticket:
             raise HTTPException(status_code=404, detail="Ticket not found")
+
+        if expected_version is None:
+            raise HTTPException(status_code=400, detail="Version is required for ticket status updates")
         
         # Validate state transitions
         valid_transitions = {
@@ -438,44 +457,57 @@ class TicketService:
         # ENHANCEMENT L2 SLA AUTOMATION - Handle SLA pause/resume on status change
         from src.services.sla_service import SLAService
         old_status = ticket.status
-        
-        # Update ticket
-        ticket.status = new_status
-        ticket.updated_at = datetime.now(timezone.utc)
-        
-        # Set closedAt timestamp for closed/resolved states
+
+        update_fields = {
+            "status": new_status,
+        }
+
         if new_status in [TicketStatus.closed, TicketStatus.resolved]:
-            ticket.closed_at = datetime.now(timezone.utc)
-        elif ticket.closed_at:  # Clear closedAt if reopening
-            ticket.closed_at = None
-        
-        await ticket.save()
+            update_fields["closed_at"] = datetime.now(timezone.utc)
+        elif ticket.closed_at is not None:  # Clear closedAt if reopening
+            update_fields["closed_at"] = None
+
+        updated_ticket = await Ticket.optimistic_update(ticket_id, update_fields, expected_version)
+
+        if not updated_ticket:
+            raise HTTPException(
+                status_code=409,
+                detail="Ticket was updated by another user. Refresh and try again."
+            )
         
         # ENHANCEMENT L2 SLA AUTOMATION - Handle SLA pause/resume logic
         try:
             if new_status == TicketStatus.waiting_for_customer and old_status != TicketStatus.waiting_for_customer:
                 # Agent responded, pause SLA timer
-                await SLAService.pause_sla(ticket)
-                print(f"SLA paused for ticket {ticket.id}: agent responded")
+                await SLAService.pause_sla(updated_ticket)
+                print(f"SLA paused for ticket {updated_ticket.id}: agent responded")
             elif old_status == TicketStatus.waiting_for_customer and new_status != TicketStatus.waiting_for_customer:
                 # Customer responded, resume SLA timer and extend due date
-                await SLAService.resume_sla(ticket)
-                print(f"SLA resumed for ticket {ticket.id}: customer responded, due date extended")
+                await SLAService.resume_sla(updated_ticket)
+                print(f"SLA resumed for ticket {updated_ticket.id}: customer responded, due date extended")
         except Exception as e:
-            print(f"SLA pause/resume failed for ticket {ticket.id}: {e}")
+            print(f"SLA pause/resume failed for ticket {updated_ticket.id}: {e}")
             # Don't fail status update if SLA logic fails
         
-        return await TicketService._build_ticket_response(ticket)
+        return await TicketService._build_ticket_response(updated_ticket)
 
     @staticmethod
-    async def close_ticket(ticket_id: PydanticObjectId, resolution_comment: str = None) -> Optional[TicketResponse]:
+    async def close_ticket(
+        ticket_id: PydanticObjectId,
+        resolution_comment: str = None,
+        expected_version: Optional[int] = None
+    ) -> Optional[TicketResponse]:
         """Close a ticket with optional resolution comment"""
-        return await TicketService.update_ticket_status(ticket_id, TicketStatus.closed)
+        return await TicketService.update_ticket_status(ticket_id, TicketStatus.closed, expected_version)
 
     @staticmethod
-    async def resolve_ticket(ticket_id: PydanticObjectId, resolution_comment: str = None) -> Optional[TicketResponse]:
+    async def resolve_ticket(
+        ticket_id: PydanticObjectId,
+        resolution_comment: str = None,
+        expected_version: Optional[int] = None
+    ) -> Optional[TicketResponse]:
         """Mark a ticket as resolved with optional resolution comment"""
-        return await TicketService.update_ticket_status(ticket_id, TicketStatus.resolved)
+        return await TicketService.update_ticket_status(ticket_id, TicketStatus.resolved, expected_version)
 
     @staticmethod
     def _calculate_business_days(start_date: datetime, end_date: datetime) -> int:
@@ -510,15 +542,18 @@ class TicketService:
         return business_days <= 10
 
     @staticmethod
-    async def reopen_ticket(ticket_id: PydanticObjectId) -> Optional[TicketResponse]:
+    async def reopen_ticket(ticket_id: PydanticObjectId, expected_version: Optional[int]) -> Optional[TicketResponse]:
         """Reopen a closed/resolved ticket if within 10 business days"""
+        if expected_version is None:
+            raise HTTPException(status_code=400, detail="Version is required to reopen a ticket")
+
         if not await TicketService.can_reopen_ticket(ticket_id):
             raise HTTPException(
                 status_code=400, 
                 detail="Ticket cannot be reopened. Either it's not closed/resolved or more than 10 business days have passed."
             )
         
-        return await TicketService.update_ticket_status(ticket_id, TicketStatus.in_progress)
+        return await TicketService.update_ticket_status(ticket_id, TicketStatus.in_progress, expected_version)
 
     @staticmethod
     async def get_queue_tickets(current_user: User) -> List[TicketResponse]:

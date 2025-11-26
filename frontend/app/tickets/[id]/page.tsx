@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { isAxiosError } from 'axios';
 import { useParams } from 'next/navigation';
 import { Breadcrumb, BreadcrumbItem, Button, Avatar, Textarea } from 'flowbite-react';
 import { MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Brain, Sparkles, Edit, Save, X, Clock, RotateCcw, Paperclip, Download, Eye, FileIcon } from 'lucide-react';
@@ -24,6 +25,11 @@ export default function TicketDetailPage() {
   const [loading, setLoading] = useState(true);
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [loadingAttachments, setLoadingAttachments] = useState(false);
+  const [conflictInfo, setConflictInfo] = useState<{
+    message: string;
+    updatedAt?: string;
+    updatedBy?: string;
+  } | null>(null);
   
   // File preview states
   const [previewFile, setPreviewFile] = useState<FileAttachment | null>(null);
@@ -68,6 +74,7 @@ export default function TicketDetailPage() {
         ticketsApi.getComments(ticketId),
       ]);
       setTicket(ticketData);
+      setConflictInfo(null);
       setComments(commentsData);
       
       // ENHANCEMENT L2: FILE ATTACHMENTS - Fetch file attachments for the ticket
@@ -134,17 +141,57 @@ export default function TicketDetailPage() {
     }
   };
 
-  const handleStatusUpdate = async (newStatus: TicketStatus) => {
-    if (!ticketId || !ticket) return;
+  const handleConcurrencyError = useCallback(async (error: unknown) => {
+    if (!ticketId || !isAxiosError(error) || error.response?.status !== 409) {
+      return false;
+    }
+
+    const conflictMessage =
+      error.response?.data?.detail ??
+      'Ticket was updated by another user. Please review the latest changes.';
+
+    try {
+      const latestTicket = await ticketsApi.getById(ticketId);
+      setTicket(latestTicket);
+      setConflictInfo({
+        message: conflictMessage,
+        updatedAt: latestTicket.updatedAt,
+        updatedBy:
+          latestTicket.agentInfo?.name ||
+          latestTicket.agentInfo?.email ||
+          latestTicket.userInfo?.name ||
+          latestTicket.userInfo?.email,
+      });
+    } catch (refreshError) {
+      console.error('Failed to refresh ticket after conflict:', refreshError);
+      setConflictInfo({
+        message: conflictMessage,
+      });
+    }
+
+    return true;
+  }, [ticketId]);
+
+  const handleConflictReload = useCallback(async () => {
+    await fetchTicketData();
+    setConflictInfo(null);
+  }, [fetchTicketData]);
+
+  const handleStatusUpdate = async (newStatus: TicketStatus): Promise<boolean> => {
+    if (!ticketId || !ticket) return false;
 
     try {
       setUpdatingStatus(true);
-      await ticketsApi.updateStatus(ticketId, newStatus);
-      
-      // Update local ticket state
-      setTicket({ ...ticket, status: newStatus });
+      const updatedTicket = await ticketsApi.updateStatus(ticketId, newStatus, ticket.version);
+      setTicket(updatedTicket);
+      setConflictInfo(null);
+      return true;
     } catch (error) {
-      console.error('Failed to update ticket status:', error);
+      const handled = await handleConcurrencyError(error);
+      if (!handled) {
+        console.error('Failed to update ticket status:', error);
+      }
+      return false;
     } finally {
       setUpdatingStatus(false);
     }
@@ -176,13 +223,14 @@ export default function TicketDetailPage() {
       const newCommentData = await ticketsApi.createComment(ticketId, commentData);
       setComments([...comments, newCommentData]);
       
-      // Then close the ticket
-      await ticketsApi.updateStatus(ticketId, 'closed');
-      setTicket({ ...ticket, status: 'closed' });
+      // Then close the ticket via status update (optimistic locking)
+      const statusUpdated = await handleStatusUpdate('closed');
       
-      // Reset form
-      setClosingComment('');
-      setShowCloseForm(false);
+      if (statusUpdated) {
+        // Reset form only if close succeeded
+        setClosingComment('');
+        setShowCloseForm(false);
+      }
     } catch (error) {
       console.error('Failed to close ticket:', error);
     } finally {
@@ -311,13 +359,15 @@ export default function TicketDetailPage() {
 
     try {
       setReopeningTicket(true);
-      await ticketsApi.reopenTicket(ticketId);
-      
-      // Update local ticket state
-      setTicket({ ...ticket, status: 'new' });
+      const updatedTicket = await ticketsApi.reopenTicket(ticketId, ticket.version);
+      setTicket(updatedTicket);
+      setConflictInfo(null);
       setShowReopenConfirm(false);
     } catch (error) {
-      console.error('Failed to reopen ticket:', error);
+      const handled = await handleConcurrencyError(error);
+      if (!handled) {
+        console.error('Failed to reopen ticket:', error);
+      }
     } finally {
       setReopeningTicket(false);
     }
@@ -420,6 +470,40 @@ export default function TicketDetailPage() {
               </div>
             </div>
           </div>
+
+          {conflictInfo && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div className="flex items-center font-semibold">
+                    <AlertCircle className="mr-2 h-5 w-5" />
+                    Concurrent update detected
+                  </div>
+                  <p className="mt-1">
+                    {conflictInfo.message}
+                  </p>
+                  {conflictInfo.updatedAt && (
+                    <p className="mt-1 text-xs">
+                      Latest change {formatFullDateTime(conflictInfo.updatedAt)}
+                      {conflictInfo.updatedBy ? ` by ${conflictInfo.updatedBy}` : ''}
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500"
+                    onClick={handleConflictReload}
+                  >
+                    Refresh ticket
+                  </Button>
+                  <Button size="sm" color="gray" onClick={() => setConflictInfo(null)}>
+                    Dismiss
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Main Content */}

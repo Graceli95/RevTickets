@@ -16,17 +16,6 @@ class UserInfo(BaseModel):
     email: str
     name: Optional[str] = None
 
-class TicketBase(BaseModel):
-    category_id: PydanticObjectId = Field(..., alias="categoryId")
-    sub_category_id: PydanticObjectId = Field(..., alias="subCategoryId") 
-    user_id: str = Field(..., alias="userId")
-    agent_id: Optional[str] = Field(None, alias="agentId")
-    title: str
-    description: str
-    content: RichTextContent
-    status: TicketStatus
-    priority: TicketPriority
-
 class TicketCreate(BaseModel):
     category_id: str  # Will be converted to PydanticObjectId in service
     sub_category_id: str  # Will be converted to PydanticObjectId in service
@@ -36,8 +25,20 @@ class TicketCreate(BaseModel):
     priority: TicketPriority = TicketPriority.medium
     tag_ids: Optional[List[Dict[str, str]]] = Field(default_factory=list)
 
-class TicketUpdate(TicketBase):
-    tagIds: Optional[List[str]]
+class TicketUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    content: Optional[RichTextContent] = None
+    status: Optional[TicketStatus] = None
+    priority: Optional[TicketPriority] = None
+    category_id: Optional[str] = Field(None, alias="categoryId")
+    sub_category_id: Optional[str] = Field(None, alias="subCategoryId")
+    agent_id: Optional[str] = Field(None, alias="agentId")
+    tag_ids: Optional[List[Dict[str, str]]] = Field(default=None, alias="tagIds")
+    version: int = Field(..., ge=1, description="Expected ticket version for optimistic locking")
+
+    class Config:
+        populate_by_name = True
 
 class TicketResponse(BaseModel):
     id: str
@@ -65,6 +66,7 @@ class TicketResponse(BaseModel):
     sla_breached: Optional[bool] = Field(None, description="Whether SLA has been breached", alias="slaBreached")
     sla_paused_at: Optional[datetime] = Field(None, description="When SLA was paused", alias="slaPausedAt")
     sla_total_paused_time: Optional[int] = Field(None, description="Total minutes SLA has been paused", alias="slaTotalPausedTime")
+    version: int = Field(..., description="Current optimistic locking version")
 
     class Config:
         populate_by_name = True

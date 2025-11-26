@@ -80,8 +80,8 @@ export const ticketsApi = {
     return apiClient.post(`/tickets/${ticketId}/auto-assign`);
   },
 
-  async updateStatus(ticketId: string, status: string): Promise<Ticket> {
-    return apiClient.patch(`/tickets/${ticketId}/status`, { status });
+  async updateStatus(ticketId: string, status: string, version: number): Promise<Ticket> {
+    return apiClient.patch(`/tickets/${ticketId}/status`, { status, version });
   },
 
   async getComments(ticketId: string): Promise<Comment[]> {
@@ -110,8 +110,8 @@ export const ticketsApi = {
     return apiClient.get(API_ENDPOINTS.TICKETS.CAN_REOPEN(ticketId));
   },
 
-  async reopenTicket(ticketId: string): Promise<Ticket> {
-    return apiClient.post(API_ENDPOINTS.TICKETS.REOPEN(ticketId));
+  async reopenTicket(ticketId: string, version: number): Promise<Ticket> {
+    return apiClient.post(API_ENDPOINTS.TICKETS.REOPEN(ticketId), { version });
   },
 
   // ENHANCEMENT L1 AI TICKET SUMMARY - AI functionality
