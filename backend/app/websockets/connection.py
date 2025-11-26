@@ -54,7 +54,8 @@ class ConnectionManager:
 
     async def broadcast(self, channel: str, message: Dict[str, Any]) -> None:
         """Send a payload to all sockets listening on a channel."""
-        sockets = list(self._connections.get(channel, []))
+        async with self._lock:
+            sockets = list(self._connections.get(channel, []))
         for socket in sockets:
             try:
                 await socket.send_json(message)
@@ -62,24 +63,28 @@ class ConnectionManager:
                 # If a socket fails, drop it to avoid leaks
                 await self.disconnect(socket)
 
-    def add_listener(self, channel: str, listener: EventListener) -> None:
+    async def add_listener(self, channel: str, listener: EventListener) -> None:
         """Register background listeners for server-side events."""
-        listeners = self._listeners.setdefault(channel, [])
-        if listener not in listeners:
-            listeners.append(listener)
+        async with self._lock:
+            listeners = self._listeners.setdefault(channel, [])
+            if listener not in listeners:
+                listeners.append(listener)
 
-    def remove_listener(self, channel: str, listener: EventListener) -> None:
-        listeners = self._listeners.get(channel)
-        if not listeners:
-            return
-        if listener in listeners:
-            listeners.remove(listener)
-        if not listeners:
-            self._listeners.pop(channel, None)
+    async def remove_listener(self, channel: str, listener: EventListener) -> None:
+        async with self._lock:
+            listeners = self._listeners.get(channel)
+            if not listeners:
+                return
+            if listener in listeners:
+                listeners.remove(listener)
+            if not listeners:
+                self._listeners.pop(channel, None)
 
     async def emit(self, channel: str, payload: Dict[str, Any]) -> None:
         """Dispatch a payload to registered event listeners."""
-        for listener in list(self._listeners.get(channel, [])):
+        async with self._lock:
+            listeners = list(self._listeners.get(channel, []))
+        for listener in listeners:
             await listener(payload)
 
     async def shutdown(self) -> None:

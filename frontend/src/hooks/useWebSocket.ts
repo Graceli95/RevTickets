@@ -60,7 +60,7 @@ export const useWebSocket = (url: string, options: UseWebSocketOptions = {}): Us
       socket.onerror = null;
       socket.onclose = null;
 
-      if (shouldClose && socket.readyState === WebSocket.OPEN) {
+      if (shouldClose && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
         socket.close();
       }
 
@@ -121,7 +121,6 @@ export const useWebSocket = (url: string, options: UseWebSocketOptions = {}): Us
   }, [
     url,
     enabled,
-    protocols,
     reconnect,
     reconnectInterval,
     onMessage,
