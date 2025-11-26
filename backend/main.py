@@ -12,6 +12,7 @@ from src.api.v1.routes.user import router as user_router
 from src.api.v1.routes.article import router as article_router
 from src.api.v1.routes.ai import router as ai_router
 from app.websockets.ticket_events import router as ticket_ws_router
+from app.websockets.connection import connection_manager
 
 import sys
 import os
@@ -21,7 +22,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 async def lifespan(app: FastAPI):
     await init_db()
     yield
-    pass
+    await connection_manager.shutdown()
 
 app = FastAPI(
     title="Ticketing System",
