@@ -6,6 +6,7 @@ from src.services.ai_service import AIService
 from typing import List
 from src.utils.security import get_current_agent_user, get_current_user
 from pydantic import BaseModel
+from src.services.search import SearchService
 
 router = APIRouter(prefix="/articles", tags=["Articles"])
 
@@ -21,20 +22,25 @@ class GenerateTagsResponse(BaseModel):
 @router.post("/", response_model=ArticleResponse, dependencies=[Depends(get_current_agent_user)])
 async def create_article(data: ArticleCreate):
     try:
-        return await ArticleService.create_article(data)
+        article = await ArticleService.create_article(data)
+        await SearchService.article_documents_changed(article.id, force_reindex=True)
+        return article
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.put("/{article_id}", response_model=ArticleResponse, dependencies=[Depends(get_current_agent_user)])
 async def update_article(article_id: str, data: ArticleUpdate):
     try:
-        return await ArticleService.update_article(article_id, data)
+        article = await ArticleService.update_article(article_id, data)
+        await SearchService.article_documents_changed(article.id)
+        return article
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 @router.delete("/{article_id}", dependencies=[Depends(get_current_agent_user)])
 async def delete_article(article_id: str):
     await ArticleService.delete_article(article_id)
+    await SearchService.article_documents_changed(article_id, force_reindex=True)
     return {"message": "Article deleted"}
 
 # Public routes (all authenticated users can browse)
@@ -88,6 +94,8 @@ async def generate_tags_from_article(article_id: str):
 async def update_article_ai_tags(article_id: str, request: GenerateTagsResponse):
     """Update article with AI-generated tags."""
     try:
-        return await ArticleService.update_ai_tags(article_id, request.tags)
+        article = await ArticleService.update_ai_tags(article_id, request.tags)
+        await SearchService.article_documents_changed(article.id)
+        return article
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

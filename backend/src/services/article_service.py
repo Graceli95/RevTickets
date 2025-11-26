@@ -8,6 +8,7 @@ from src.schemas.subcategory import SubCategoryResponse
 from beanie import PydanticObjectId
 from typing import List
 from datetime import datetime, timezone
+from src.services.search import SearchService
 
 class ArticleService:
     @staticmethod
@@ -189,7 +190,7 @@ class ArticleService:
         """Search articles by title and content using MongoDB text search"""
         import re
         from beanie import PydanticObjectId
-        
+        await SearchService.ensure_kb_indexes()
         # Build search filters
         filters = {}
         
