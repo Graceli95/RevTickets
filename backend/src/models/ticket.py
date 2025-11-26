@@ -1,0 +1,87 @@
+from beanie import Document,Link, PydanticObjectId
+from pydantic import Field
+from typing import Optional, List, Dict, Any
+from datetime import datetime, timezone
+from .category import Category
+from .subcategory import SubCategory
+from .enums import TicketStatus, TicketPriority
+from .user import User
+from .rich_text import RichTextContent
+class Ticket(Document):
+    id: Optional[PydanticObjectId] = Field(default=None, alias="_id", description="Primary key (MongoDB ObjectId)")
+    category_id: Link[Category] = Field(..., description="ID of the category this ticket belongs to", alias="categoryId")
+    sub_category_id: Link[SubCategory] = Field(..., description="ID of the subcategory this ticket belongs to", alias="subCategoryId")
+    user_id: Link[User] = Field(..., description="ID of the user who created the ticket", alias="userId")
+    agent_id: Optional[Link[User]] = Field(None, description="ID of the agent assigned to the ticket (if any)", alias="agentId")
+    
+    title: str = Field(..., description="Title of the ticket")
+    description: str = Field(..., description="Detailed description of the ticket")
+    content: RichTextContent = Field(..., description="Rich text content of the ticket with HTML, JSON, and plain text formats")
+    tag_ids: Optional[List[Dict[str, str]]] = Field(default_factory=list, description="List of tag IDs associated with the ticket", alias="tagIds")
+
+    status: TicketStatus = Field(default=TicketStatus.new, description="Status of the ticket") 
+    priority: TicketPriority = Field(default=TicketPriority.medium, description="Priority: low, medium, high, critical")
+
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), alias="createdAt")
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), alias="updatedAt")
+    closed_at: Optional[datetime] = Field(None, alias="closedAt")
+    
+    # ENHANCEMENT L1 AI TICKET SUMMARY - Store AI-generated summary
+    ai_summary: Optional[str] = Field(None, description="AI-generated summary of the ticket")
+    summary_generated_at: Optional[datetime] = Field(None, description="When the AI summary was generated")
+
+    # Optimistic locking metadata
+    version: int = Field(default=1, description="Optimistic locking version counter")
+
+    # ENHANCEMENT L2 SLA AUTOMATION - SLA tracking fields
+    sla_due_date: Optional[datetime] = Field(None, description="When SLA response is due")
+    sla_breached: bool = Field(default=False, description="Whether SLA has been breached")
+    sla_paused_at: Optional[datetime] = Field(None, description="When SLA was paused (waiting for customer)")
+    sla_total_paused_time: int = Field(default=0, description="Total minutes SLA has been paused")
+
+    class Settings:
+        name = "tickets"  # MongoDB collection name
+
+    @classmethod
+    async def optimistic_update(
+        cls,
+        ticket_id: PydanticObjectId,
+        update_fields: Dict[str, Any],
+        expected_version: Optional[int]
+    ) -> Optional["Ticket"]:
+        """
+        Atomically update a ticket while enforcing optimistic locking.
+        Returns the updated ticket when successful or None when the version check fails.
+        """
+        if expected_version is None:
+            return None
+
+        mongo_fields: Dict[str, Any] = {}
+
+        for key, value in (update_fields or {}).items():
+            field_info = cls.model_fields.get(key)
+            db_key = field_info.alias if field_info and field_info.alias else key
+            mongo_fields[db_key] = value
+
+        updated_at_field = cls.model_fields.get("updated_at")
+        updated_at_key = (
+            updated_at_field.alias
+            if updated_at_field and updated_at_field.alias
+            else "updated_at"
+        )
+        mongo_fields[updated_at_key] = datetime.now(timezone.utc)
+
+        result = await cls.find_one(
+            cls.id == ticket_id,
+            cls.version == expected_version
+        ).update_one(
+            {
+                "$set": mongo_fields,
+                "$inc": {"version": 1}
+            }
+        )
+
+        if result is None or result.matched_count == 0:
+            return None
+
+        return await cls.get(ticket_id)
