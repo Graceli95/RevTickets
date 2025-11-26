@@ -128,17 +128,17 @@ export function RichTextEditor({
     }
     
     if (editor && !editor.isDestroyed) {
-      // Only update if the content is actually different to avoid unnecessary re-renders
-      const currentHTML = editor.getHTML();
-      const newHTML = typeof editorContent === 'string' ? editorContent : editor.getHTML();
+      const isStringContent = typeof editorContent === 'string';
+      const currentContent = isStringContent ? editor.getHTML() : editor.getJSON();
+      const newContent = isStringContent ? (editorContent || '') : editorContent;
       
-      // Don't update if content is the same (prevents cursor jumping)
-      if (currentHTML !== newHTML) {
-        if (typeof editorContent === 'object') {
-          editor.commands.setContent(editorContent);
-        } else {
-          editor.commands.setContent(editorContent || '');
-        }
+      // Only update when incoming content differs to avoid cursor jumps
+      const isDifferent = isStringContent
+        ? currentContent !== newContent
+        : JSON.stringify(currentContent) !== JSON.stringify(newContent);
+      
+      if (isDifferent) {
+        editor.commands.setContent(newContent);
       }
     }
   }, [editorContent, editor]);
