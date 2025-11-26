@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { Breadcrumb, BreadcrumbItem, Button, Avatar, Textarea } from 'flowbite-react';
 import { MessageCircle, AlertCircle, Edit3, CheckCircle2, XCircle, Home, Brain, Sparkles, Edit, Save, X, Clock, RotateCcw, Paperclip, Download, Eye, FileIcon, Plus, Upload } from 'lucide-react';
 import Link from 'next/link';
-import { MainLayout, ProtectedRoute, FileUpload } from '../../../src/app/shared/components';
+import { MainLayout, ProtectedRoute, SLAIndicator, FileUpload } from '../../../src/app/shared/components';
 import { LoadingSpinner } from '../../../src/app/shared/components';
 import { RichTextEditor } from '../../../src/app/shared/components/RichTextEditor';
 import { ticketsApi, filesApi } from '../../../src/lib/api';
@@ -591,8 +591,8 @@ export default function TicketDetailPage() {
 
               {/* Ticket Details Card */}
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                {/* Status and Priority Info */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                {/* Status, Priority, and Assignment Info */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                   <div>
                     <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">STATUS</div>
                     <div className="flex items-center space-x-2">
@@ -638,6 +638,28 @@ export default function TicketDetailPage() {
                       }`}>
                         {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
                       </span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">ASSIGNED TO</div>
+                    <div className="flex items-center space-x-2">
+                      {ticket.agentInfo ? (
+                        <>
+                          <Avatar
+                            img=""
+                            alt={ticket.agentInfo.name || ticket.agentInfo.email}
+                            size="xs"
+                            className="flex-shrink-0"
+                          />
+                          <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {ticket.agentInfo.name || ticket.agentInfo.email}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-sm text-gray-500 dark:text-gray-400 italic">
+                          Unassigned
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1076,6 +1098,24 @@ export default function TicketDetailPage() {
 
             {/* Actions Sidebar */}
             <div className="space-y-6">
+              {/* SLA Status Card - Visible to Agents */}
+              {user?.role === 'agent' && ticket.status !== 'closed' && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                      SLA Status
+                    </h3>
+                  </div>
+                  <div className="p-4">
+                    <SLAIndicator 
+                      priority={ticket.priority}
+                      createdAt={ticket.createdAt}
+                      status={ticket.status}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Action Buttons Card */}
               {canModifyTicket && ticket.status !== 'closed' && (
                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
