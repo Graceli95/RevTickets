@@ -26,6 +26,7 @@ export interface Ticket {
   createdAt: string;
   updatedAt: string;
   closedAt?: string;
+  version: number;
   // ENHANCEMENT L1 AI TICKET SUMMARY - Add AI summary fields
   aiSummary?: string;
   summaryGeneratedAt?: string;
@@ -59,6 +60,7 @@ export interface UpdateTicketRequest {
   status?: TicketStatus;
   priority?: TicketPriority;
   agent_id?: string;
+  version: number;
 }
 
 export interface TicketStats {

@@ -1,6 +1,6 @@
 from beanie import Document,Link, PydanticObjectId
 from pydantic import Field
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 from .category import Category
 from .subcategory import SubCategory
@@ -30,6 +30,9 @@ class Ticket(Document):
     ai_summary: Optional[str] = Field(None, description="AI-generated summary of the ticket")
     summary_generated_at: Optional[datetime] = Field(None, description="When the AI summary was generated")
 
+    # Optimistic locking metadata
+    version: int = Field(default=1, description="Optimistic locking version counter")
+
     # ENHANCEMENT L2 SLA AUTOMATION - SLA tracking fields
     sla_due_date: Optional[datetime] = Field(None, description="When SLA response is due")
     sla_breached: bool = Field(default=False, description="Whether SLA has been breached")
@@ -39,4 +42,46 @@ class Ticket(Document):
     class Settings:
         name = "tickets"  # MongoDB collection name
 
-    
+    @classmethod
+    async def optimistic_update(
+        cls,
+        ticket_id: PydanticObjectId,
+        update_fields: Dict[str, Any],
+        expected_version: Optional[int]
+    ) -> Optional["Ticket"]:
+        """
+        Atomically update a ticket while enforcing optimistic locking.
+        Returns the updated ticket when successful or None when the version check fails.
+        """
+        if expected_version is None:
+            return None
+
+        mongo_fields: Dict[str, Any] = {}
+
+        for key, value in (update_fields or {}).items():
+            field_info = cls.model_fields.get(key)
+            db_key = field_info.alias if field_info and field_info.alias else key
+            mongo_fields[db_key] = value
+
+        updated_at_field = cls.model_fields.get("updated_at")
+        updated_at_key = (
+            updated_at_field.alias
+            if updated_at_field and updated_at_field.alias
+            else "updated_at"
+        )
+        mongo_fields[updated_at_key] = datetime.now(timezone.utc)
+
+        result = await cls.find_one(
+            cls.id == ticket_id,
+            cls.version == expected_version
+        ).update_one(
+            {
+                "$set": mongo_fields,
+                "$inc": {"version": 1}
+            }
+        )
+
+        if result is None or result.matched_count == 0:
+            return None
+
+        return await cls.get(ticket_id)
