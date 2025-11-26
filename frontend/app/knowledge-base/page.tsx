@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Button, Card, Table, TableHead, TableHeadCell, TableRow, TableCell, TableBody, TextInput, Badge, Tooltip } from 'flowbite-react';
-import { Plus, BookOpen, Calendar, Search, X, Sparkles } from 'lucide-react';
+import { Plus, BookOpen, Calendar, Search, X, Sparkles, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { MainLayout, ProtectedRoute } from '../../src/app/shared/components';
@@ -24,6 +24,8 @@ export default function KnowledgeBasePage() {
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchError, setSearchError] = useState<string>('');
+  const [searchIntegrityWarning, setSearchIntegrityWarning] = useState('');
+  const [usingLocalFallback, setUsingLocalFallback] = useState(false);
 
   const fetchArticles = useCallback(async () => {
     try {
@@ -46,27 +48,81 @@ export default function KnowledgeBasePage() {
   };
 
   // ENHANCEMENT L1 KB TITLE SEARCH - Search function
+  const dedupeArticles = useCallback((items: Article[]) => {
+    const seen = new Set<string>();
+    return items.filter((item) => {
+      if (seen.has(item.id)) {
+        return false;
+      }
+      seen.add(item.id);
+      return true;
+    });
+  }, []);
+
+  const runClientFallback = useCallback((query: string) => {
+    if (!query.trim()) return [];
+    const normalized = query.toLowerCase();
+    return articles.filter((article) => {
+      const richText = getRichTextDisplay(article.content).toLowerCase();
+      const titleMatch = article.title.toLowerCase().includes(normalized);
+      const bodyMatch = richText.includes(normalized);
+      const tagMatch = article.aiGeneratedTags?.some((tag) => tag.toLowerCase().includes(normalized));
+      const categoryMatch = [article.category?.name, article.subCategory?.name]
+        .filter(Boolean)
+        .some((name) => name?.toLowerCase().includes(normalized));
+      return titleMatch || bodyMatch || tagMatch || categoryMatch;
+    });
+  }, [articles]);
+
   const handleSearch = useCallback(async (query: string) => {
     if (!query.trim()) {
       setShowSearchResults(false);
       setSearchResults([]);
+      setSearchIntegrityWarning('');
+      setUsingLocalFallback(false);
       return;
     }
 
     try {
       setIsSearching(true);
       setSearchError('');
-      const results = await articlesApi.search({ q: query });
-      setSearchResults(results);
+      setSearchIntegrityWarning('');
+      setUsingLocalFallback(false);
+      const apiResults = await articlesApi.search({ q: query });
+      const deduped = dedupeArticles(apiResults);
+      if (deduped.length !== apiResults.length) {
+        setSearchIntegrityWarning('Removed duplicate articles returned by the search index.');
+      }
+      if (deduped.length === 0) {
+        const fallback = runClientFallback(query);
+        if (fallback.length) {
+          setSearchResults(fallback);
+          setUsingLocalFallback(true);
+          setSearchIntegrityWarning('Search index returned no matches; showing locally filtered results.');
+        } else {
+          setSearchResults([]);
+          setUsingLocalFallback(false);
+        }
+      } else {
+        setSearchResults(deduped);
+      }
       setShowSearchResults(true);
     } catch (error) {
       console.error('Failed to search articles:', error);
-      setSearchResults([]);
-      setSearchError('Search failed. Please try again.');
+      const fallback = runClientFallback(query);
+      if (fallback.length) {
+        setSearchResults(fallback);
+        setShowSearchResults(true);
+        setUsingLocalFallback(true);
+        setSearchIntegrityWarning('Search service is unavailable; showing cached results.');
+      } else {
+        setSearchResults([]);
+        setSearchError('Search failed. Please try again.');
+      }
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [dedupeArticles, runClientFallback]);
 
   // ENHANCEMENT L1 KB TITLE SEARCH - Debounced search effect
   useEffect(() => {
@@ -89,6 +145,8 @@ export default function KnowledgeBasePage() {
     setSearchResults([]);
     setShowSearchResults(false);
     setSearchError('');
+    setSearchIntegrityWarning('');
+    setUsingLocalFallback(false);
   };
 
   // ENHANCEMENT L2 AI KB TAGS - Helper function to check if article was found via AI tags
@@ -184,11 +242,22 @@ export default function KnowledgeBasePage() {
                 </button>
               </div>
             )}
+            {searchIntegrityWarning && (
+              <div className="mt-3 flex items-start rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-900 dark:bg-yellow-950/30 dark:text-yellow-200">
+                <AlertTriangle className="mr-2 h-4 w-4 flex-shrink-0" />
+                <span>{searchIntegrityWarning}</span>
+              </div>
+            )}
           </Card>
 
 
           {/* Articles Table */}
           <Card>
+            {usingLocalFallback && (
+              <div className="mb-4 rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-900 dark:bg-yellow-950/30 dark:text-yellow-200">
+                Showing locally filtered results while the search index rebuilds.
+              </div>
+            )}
             {displayArticles.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-gray-500 dark:text-gray-400">
